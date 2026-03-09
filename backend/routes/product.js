@@ -190,6 +190,221 @@ router.get('/certificate/:filename', (req, res) => {
 });
 
 /**
+ * @route   POST /api/products/bulk-register
+ * @desc    Save multiple products to database and create a Batch record after blockchain creation
+ * @access  Private
+ */
+router.post('/bulk-register', async (req, res) => {
+    try {
+        const { batchId, products: productsToRegister, manufacturerAddress, certificateFilename, certificatePath, txHash } = req.body;
+
+        if (!batchId || !productsToRegister || !Array.isArray(productsToRegister) || productsToRegister.length === 0 || !manufacturerAddress) {
+            return res.status(400).json({
+                success: false,
+                message: 'Missing or invalid product data (batchId required)'
+            });
+        }
+
+        const Product = (await import('../models/Product.js')).default;
+        const User = (await import('../models/User.js')).default;
+        const Batch = (await import('../models/Batch.js')).default;
+
+        const manufacturer = await User.findOne({
+            walletAddress: { $regex: new RegExp(`^${manufacturerAddress}$`, 'i') }
+        });
+
+        if (!manufacturer) {
+            return res.status(404).json({
+                success: false,
+                message: 'Manufacturer not found'
+            });
+        }
+
+        const createdProducts = [];
+        const productIdsForBatch = [];
+        let sharedHandoverKey = null;
+
+        for (const p of productsToRegister) {
+            if (p.handoverKey && !sharedHandoverKey) {
+                sharedHandoverKey = p.handoverKey;
+            }
+
+            const product = await Product.findOneAndUpdate(
+                { productId: parseInt(p.productId) },
+                {
+                    $set: {
+                        name: p.name,
+                        description: p.description || "",
+                        manufacturer: manufacturer._id,
+                        manufacturerAddress: manufacturerAddress.toLowerCase(),
+                        loomLocation: p.loomLocation || "Not Specified",
+                        weaveDate: p.weaveDate
+                            ? (typeof p.weaveDate === 'number' || /^\d+$/.test(p.weaveDate)
+                                ? new Date(Number(p.weaveDate) * 1000)
+                                : new Date(p.weaveDate))
+                            : new Date(),
+                        consumerSecretHash: p.consumerSecretHash,
+                        currentHandoverKey: p.handoverKey || null,
+                        productCertificate: {
+                            filename: certificateFilename,
+                            path: certificatePath || `uploads/product-certificates/${certificateFilename}`,
+                            uploadedAt: new Date()
+                        },
+                        blockchainTxHash: txHash
+                    }
+                },
+                { upsert: true, new: true, setDefaultsOnInsert: true }
+            );
+            createdProducts.push({ id: product.productId, name: product.name });
+            productIdsForBatch.push(product.productId);
+        }
+
+        // Create the Batch record
+        await Batch.findOneAndUpdate(
+            { batchId: parseInt(batchId) },
+            {
+                $set: {
+                    productIds: productIdsForBatch,
+                    manufacturer: manufacturer._id,
+                    manufacturerAddress: manufacturerAddress.toLowerCase(),
+                    currentHandoverKey: sharedHandoverKey,
+                    blockchainTxHash: txHash
+                }
+            },
+            { upsert: true, new: true, setDefaultsOnInsert: true }
+        );
+
+        res.json({
+            success: true,
+            message: `${createdProducts.length} products and Batch #${batchId} registered in database`,
+            batchId,
+            products: createdProducts
+        });
+
+    } catch (error) {
+        console.error('Bulk registration error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to register products',
+            error: error.message
+        });
+    }
+});
+
+/**
+ * @route   GET /api/products/batch/:batchId
+ * @desc    Get details for an entire batch
+ * @access  Public
+ */
+router.get('/batch/:batchId', async (req, res) => {
+    try {
+        const { batchId } = req.params;
+        const Batch = (await import('../models/Batch.js')).default;
+
+        const batch = await Batch.findOne({ batchId: parseInt(batchId) })
+            .populate('manufacturer', 'name email walletAddress');
+
+        if (!batch) {
+            return res.status(404).json({
+                success: false,
+                message: 'Batch not found in database'
+            });
+        }
+
+        res.json({
+            success: true,
+            batch
+        });
+    } catch (error) {
+        console.error('Get batch details error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to retrieve batch details',
+            error: error.message
+        });
+    }
+});
+
+/**
+ * @route   GET /api/products/batch/:batchId/handover-key
+ * @desc    Get the current handover key for an entire batch
+ * @access  Public
+ */
+router.get('/batch/:batchId/handover-key', async (req, res) => {
+    try {
+        const { batchId } = req.params;
+        const Batch = (await import('../models/Batch.js')).default;
+        const batch = await Batch.findOne({ batchId: parseInt(batchId) });
+
+        if (!batch) {
+            return res.status(404).json({
+                success: false,
+                message: 'Batch not found'
+            });
+        }
+
+        res.json({
+            success: true,
+            handoverKey: batch.currentHandoverKey,
+            batchId: batch.batchId
+        });
+    } catch (error) {
+        console.error('Get batch handover key error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to get batch handover key',
+            error: error.message
+        });
+    }
+});
+
+/**
+ * @route   PUT /api/products/batch/:batchId/handover-key
+ * @desc    Update the current handover key for an entire batch
+ * @access  Public
+ */
+router.put('/batch/:batchId/handover-key', async (req, res) => {
+    try {
+        const { batchId } = req.params;
+        const { handoverKey } = req.body;
+
+        if (!handoverKey) {
+            return res.status(400).json({
+                success: false,
+                message: 'Handover key is required'
+            });
+        }
+
+        const Batch = (await import('../models/Batch.js')).default;
+        const batch = await Batch.findOneAndUpdate(
+            { batchId: parseInt(batchId) },
+            { currentHandoverKey: handoverKey },
+            { new: true }
+        );
+
+        if (!batch) {
+            return res.status(404).json({
+                success: false,
+                message: 'Batch not found'
+            });
+        }
+
+        res.json({
+            success: true,
+            message: 'Batch handover key updated successfully',
+            batchId: batch.batchId
+        });
+    } catch (error) {
+        console.error('Update batch handover key error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to update batch handover key',
+            error: error.message
+        });
+    }
+});
+
+/**
  * @route   POST /api/products/register
  * @desc    Save product to database after blockchain creation
  * @access  Private

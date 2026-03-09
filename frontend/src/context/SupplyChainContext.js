@@ -114,6 +114,36 @@ export const SupplyChainProvider = ({ children }) => {
         return { productId, txHash: tx.hash };
     };
 
+    const createProductsBulk = async (name, loomLocation, weaveDate, consumerSecretHashes, handoverKeyHash, productCertificate = "") => {
+        if (!contract) throw new Error("Wallet not connected");
+        toast.info(`Registering ${consumerSecretHashes.length} Sarees on Blockchain...`);
+
+        const args = [name, loomLocation, weaveDate, consumerSecretHashes, handoverKeyHash, productCertificate];
+
+        // Submit the bulk transaction
+        const tx = await contract.createProductsBulk(...args);
+        const receipt = await tx.wait();
+
+        // Parse IDs from events
+        let newBatchId = null;
+        const productIds = receipt.logs
+            .map(log => {
+                try {
+                    const parsed = contract.interface.parseLog(log);
+                    if (parsed.name === "BatchCreated") {
+                        newBatchId = parsed.args.batchId.toString();
+                    }
+                    return parsed.name === "ProductCreated" ? parsed.args.id.toString() : null;
+                } catch (e) {
+                    return null;
+                }
+            })
+            .filter(id => id !== null);
+
+        toast.success(`${productIds.length} Sarees Registered in Bulk! Batch #${newBatchId || "N/A"} 🥻`);
+        return { productIds, batchId: newBatchId, txHash: tx.hash };
+    };
+
 
 
     const getProductData = async (id) => {
@@ -127,7 +157,6 @@ export const SupplyChainProvider = ({ children }) => {
             targetContract.getHistory(id),
             targetContract.getVerificationHistory(id)
         ]);
-
 
         return {
             id: p.id.toString(),
@@ -163,6 +192,38 @@ export const SupplyChainProvider = ({ children }) => {
         };
     };
 
+    const getBatchData = async (batchId) => {
+        const targetContract = contract || readOnlyContract;
+        if (!targetContract) throw new Error("Initializing blockchain provider...");
+
+        try {
+            const b = await targetContract.batches(batchId);
+            if (!b.exists) return null;
+            return {
+                id: b.id.toString(),
+                currentOwner: b.currentOwner,
+                state: Number(b.state),
+                exists: b.exists,
+                isActive: b.isActive,
+                currentHandoverHash: b.currentHandoverHash
+            };
+        } catch (err) {
+            console.error("error fetching batch from blockchain", err);
+            return null;
+        }
+    };
+
+    const transferBatchCustody = async (batchId, incomingKey, nextHash, location) => {
+        if (!contract) throw new Error("Wallet not connected");
+        toast.info(`Transferring Batch #${batchId}...`);
+
+        const tx = await contract.transferBatchCustody(batchId, incomingKey, nextHash, location);
+        await tx.wait();
+
+        toast.success(`Batch #${batchId} Transferred! 🔄`);
+        return { txHash: tx.hash, batchId };
+    };
+
     const hasRole = async (role, address) => {
         if (!contract && !readOnlyContract) return false;
         const target = contract || readOnlyContract;
@@ -171,8 +232,8 @@ export const SupplyChainProvider = ({ children }) => {
 
     return (
         <SupplyChainContext.Provider value={{
-            account, connectWallet, createProduct, getProductData, hasRole,
-            contract, readOnlyContract, ROLES, PRODUCT_STATES
+            account, connectWallet, createProduct, createProductsBulk, getProductData, getBatchData, hasRole,
+            contract, readOnlyContract, ROLES, PRODUCT_STATES, transferBatchCustody
         }}>
             {children}
         </SupplyChainContext.Provider>

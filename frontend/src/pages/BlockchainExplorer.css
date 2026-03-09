@@ -1,76 +1,63 @@
+/* src/pages/BlockchainExplorer.css — Redesign */
+
 .explorer-container {
     max-width: 1200px;
     margin: 0 auto;
-    padding: 2rem;
+    padding: 4rem 2rem;
     min-height: 100vh;
 }
 
 .explorer-header {
     margin-bottom: 3rem;
+    text-align: center;
 }
 
 .explorer-header h1 {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: var(--text-primary);
     margin-bottom: 2rem;
+    letter-spacing: -0.04em;
 }
 
 .stats-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
     gap: 1.5rem;
+    margin-bottom: 4rem;
 }
 
 .stat-card {
-    padding: 1.5rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-md);
+    padding: 2rem;
+    box-shadow: var(--shadow-sm);
 }
 
 .stat-label {
-    font-size: 0.9rem;
+    font-size: 0.75rem;
+    font-weight: 700;
     color: var(--text-tertiary);
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    margin-bottom: 0.5rem;
 }
 
 .stat-value {
-    font-size: 1.8rem;
-    font-weight: 700;
-    font-family: 'Space Grotesk', sans-serif;
-}
-
-.text-info {
-    color: var(--accent-info);
-}
-
-.text-gold {
-    color: var(--accent-gold);
-}
-
-.section-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1.5rem;
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--text-primary);
 }
 
 .refresh-btn {
-    background: var(--bg-tertiary);
+    background: var(--bg-secondary);
     border: 1px solid var(--border-color);
-    color: var(--text-primary);
-    padding: 0.5rem 1rem;
-    border-radius: 12px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    transition: all 0.3s ease;
+    padding: 0.6rem 1.25rem;
+    border-radius: 8px;
+    font-weight: 600;
 }
 
-.refresh-btn:hover {
-    background: var(--border-color);
-}
-
+/* Blocks List */
 .blocks-list {
     display: flex;
     flex-direction: column;
@@ -78,181 +65,66 @@
 }
 
 .block-item {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-md);
     padding: 1.5rem;
     display: grid;
-    grid-template-columns: 200px 1fr auto;
+    grid-template-columns: 150px 1fr auto;
     align-items: center;
     gap: 2rem;
-    transition: transform 0.3s ease;
+    transition: var(--transition-smooth);
 }
 
 .block-item:hover {
-    transform: translateX(10px);
     border-color: var(--accent-gold);
-}
-
-.block-meta {
-    display: flex;
-    flex-direction: column;
-}
-
-.block-number .label {
-    font-size: 0.8rem;
-    color: var(--text-tertiary);
-    margin-right: 0.5rem;
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
 }
 
 .block-number .value {
-    font-weight: 700;
-    font-size: 1.2rem;
-}
-
-.block-time {
-    font-size: 0.85rem;
-    color: var(--text-tertiary);
-}
-
-.block-details {
-    display: flex;
-    gap: 3rem;
-}
-
-.detail-item {
-    display: flex;
-    flex-direction: column;
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: var(--accent-gold);
 }
 
 .detail-item .label {
-    font-size: 0.8rem;
+    font-size: 0.7rem;
+    font-weight: 700;
     color: var(--text-tertiary);
-}
-
-.mono {
-    font-family: 'JetBrains Mono', monospace;
+    text-transform: uppercase;
 }
 
 .tx-preview {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
-    min-width: 300px;
 }
 
 .tx-mini-card {
-    background: rgba(255, 255, 255, 0.03);
-    padding: 0.4rem 0.8rem;
-    border-radius: 8px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+    background: var(--bg-secondary);
+    padding: 0.5rem 0.75rem;
+    border-radius: 6px;
     font-size: 0.8rem;
-    border: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.tx-type {
-    font-weight: 600;
-    font-size: 0.7rem;
-    padding: 2px 6px;
-    border-radius: 4px;
-    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
 }
 
 .tx-type.contract {
     color: var(--accent-gold);
-    background: rgba(251, 191, 36, 0.1);
+    font-weight: 700;
 }
 
-.more-tx {
-    font-size: 0.75rem;
-    color: var(--text-tertiary);
-    text-align: right;
-}
-
-.loading-state {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 5rem;
-    gap: 1.5rem;
-}
-
-.pulse-loader {
-    width: 40px;
-    height: 40px;
-    background: var(--accent-gold);
-    border-radius: 50%;
-    animation: pulse 1.5s infinite ease-in-out;
-}
-
-@keyframes pulse {
-    0% {
-        transform: scale(0.8);
-        opacity: 0.5;
-    }
-
-    50% {
-        transform: scale(1.2);
-        opacity: 1;
-    }
-
-    100% {
-        transform: scale(0.8);
-        opacity: 0.5;
-    }
-}
-
+/* Empty State */
 .empty-ledger-state {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 6rem 2rem;
     text-align: center;
-    gap: 1.5rem;
-    background: rgba(255, 255, 255, 0.01) !important;
-    border: 2px dashed rgba(255, 255, 255, 0.05) !important;
-}
-
-.empty-icon {
-    font-size: 4rem;
-    margin-bottom: 1rem;
-    filter: grayscale(1) opacity(0.5);
-}
-
-.shadow-glow {
-    text-shadow: 0 0 30px rgba(251, 191, 36, 0.3);
-}
-
-.empty-ledger-state h3 {
-    font-size: 1.8rem;
-    color: var(--text-secondary);
-    letter-spacing: -0.02em;
-}
-
-.empty-ledger-state p {
-    color: var(--text-tertiary);
-    max-width: 400px;
-    line-height: 1.6;
-}
-
-.hint {
-    font-size: 0.9rem;
-    color: var(--accent-gold);
-    background: rgba(251, 191, 36, 0.1);
-    padding: 0.5rem 1.2rem;
-    border-radius: 100px;
-    font-weight: 600;
+    padding: 6rem 2rem;
+    border: 2px dashed var(--border-color);
+    border-radius: var(--border-radius-lg);
 }
 
 @media (max-width: 992px) {
     .block-item {
         grid-template-columns: 1fr;
         gap: 1rem;
-    }
-
-    .block-details {
-        gap: 1rem;
-        flex-wrap: wrap;
     }
 }

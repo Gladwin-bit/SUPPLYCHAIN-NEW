@@ -1,10 +1,7 @@
-/* src/components/NavBar.css */
 .navbar {
-  background: rgba(18, 3, 12, 0.92);
-  backdrop-filter: blur(24px) saturate(180%);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
-  border-bottom: 1.5px solid rgba(212, 175, 55, 0.3);
-  padding: 0 2rem;
+  background: var(--bg-primary);
+  border-bottom: 1px solid var(--border-color);
+  padding: 0px 2rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -14,10 +11,7 @@
   right: 0;
   height: var(--nav-height);
   z-index: 1000;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow:
-    0 2px 20px rgba(0, 0, 0, 0.6),
-    0 1px 0 rgba(212, 175, 55, 0.15);
+  transition: var(--transition-smooth);
 }
 
 .nav-brand {
@@ -30,115 +24,82 @@
   text-decoration: none;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
 }
 
 .logo-icon {
-  font-size: 2rem;
-  filter: drop-shadow(0 0 12px rgba(212, 175, 55, 0.7));
+  font-size: 1.8rem;
 }
 
 .logo-text {
-  font-family: 'Playfair Display', serif;
-  font-size: 1.4rem;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1.25rem;
   font-weight: 700;
-  letter-spacing: 0.02em;
-  background: linear-gradient(135deg, var(--saree-cream) 0%, var(--saree-gold) 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
 }
 
 /* ── Nav Links ─────────────────────────────────── */
 .nav-links {
   display: flex;
-  gap: 1.5rem;
+  gap: 1rem;
   align-items: center;
 }
 
 .nav-link {
-  color: rgba(251, 245, 230, 0.75) !important;
+  color: var(--text-secondary) !important;
   text-decoration: none !important;
   font-weight: 500;
-  font-size: 0.92rem;
-  font-family: 'Lato', sans-serif;
-  letter-spacing: 0.04em;
-  padding: 0.4rem 0.75rem;
-  border-radius: 6px;
-  transition: all 0.3s ease;
-  position: relative;
-}
-
-.nav-link::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 50%;
-  width: 0;
-  height: 2px;
-  background: var(--saree-gold);
-  border-radius: 2px;
-  transition: all 0.3s ease;
-  transform: translateX(-50%);
+  font-size: 0.875rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--border-radius-sm);
+  transition: var(--transition-smooth);
 }
 
 .nav-link:hover {
-  color: var(--saree-gold) !important;
-  text-decoration: none !important;
-}
-
-.nav-link:hover::after {
-  width: 80%;
+  background: var(--bg-secondary);
+  color: var(--text-primary) !important;
 }
 
 .nav-link.active {
-  color: var(--saree-gold) !important;
-}
-
-.nav-link.active::after {
-  width: 80%;
+  background: var(--bg-tertiary);
+  color: var(--accent-gold) !important;
+  font-weight: 600;
 }
 
 /* ── Auth Buttons ──────────────────────────────── */
 .auth-buttons {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 0.75rem;
 }
 
 .nav-link-btn {
-  color: rgba(251, 245, 230, 0.8);
+  color: var(--text-secondary);
   text-decoration: none;
   font-weight: 600;
-  font-size: 0.95rem;
+  font-size: 0.875rem;
   padding: 0.5rem 1rem;
-  transition: all 0.3s ease;
+  transition: var(--transition-smooth);
 }
 
 .nav-link-btn:hover {
-  color: var(--saree-gold);
-  text-decoration: none;
+  color: var(--text-primary);
 }
 
 .btn-nav-primary {
-  padding: 0.625rem 1.5rem;
+  padding: 0.5rem 1.25rem;
   font-size: 0.875rem;
-  height: auto;
 }
 
 /* ── Admin Link ────────────────────────────────── */
 .admin-link {
-  background: rgba(212, 175, 55, 0.12);
-  color: var(--saree-gold);
-  padding: 0.5rem 1.2rem;
+  background: #fef3c7;
+  color: #92400e;
+  padding: 0.4rem 1rem;
   border-radius: 100px;
-  border: 1.5px solid rgba(212, 175, 55, 0.35);
   font-weight: 600;
-}
-
-.admin-link:hover {
-  background: rgba(212, 175, 55, 0.22);
-  border-color: var(--saree-gold);
+  font-size: 0.85rem;
 }
 
 /* ── User Section ──────────────────────────────── */
@@ -151,77 +112,66 @@
 .user-badge {
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
-  gap: 0.125rem;
-  padding: 0.5rem 1rem;
-  background: rgba(212, 175, 55, 0.08);
-  border: 1.5px solid rgba(212, 175, 55, 0.25);
-  border-radius: 12px;
-  backdrop-filter: blur(10px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  padding: 0.4rem 0.75rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-md);
 }
 
 .user-name {
-  font-size: 0.875rem;
+  font-size: 0.8rem;
   font-weight: 600;
-  color: var(--saree-cream);
-  font-family: 'Lato', sans-serif;
+  color: var(--text-primary);
 }
 
 .user-role {
-  font-size: 0.72rem;
-  color: var(--saree-gold);
-  text-transform: capitalize;
-  letter-spacing: 0.05em;
-  font-weight: 600;
+  font-size: 0.65rem;
+  color: var(--accent-gold);
+  text-transform: uppercase;
+  font-weight: 700;
 }
 
 /* ── Wallet Info ───────────────────────────────── */
 .wallet-info {
-  padding: 0.5rem 1rem;
-  background: rgba(212, 175, 55, 0.06);
-  border: 1px solid rgba(212, 175, 55, 0.2);
-  border-radius: 10px;
+  padding: 0.4rem 0.75rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-md);
 }
 
 .wallet-address {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 0.78rem;
-  color: var(--saree-gold);
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
 }
 
 /* ── Logout Button ─────────────────────────────── */
 .btn-logout {
   padding: 0.5rem;
-  background: rgba(229, 62, 62, 0.1);
-  border: 1.5px solid rgba(229, 62, 62, 0.3);
+  background: #fee2e2;
+  border: 1px solid #fecaca;
   border-radius: 8px;
-  color: #E53E3E;
+  color: #ef4444;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: var(--transition-smooth);
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .btn-logout:hover {
-  background: rgba(229, 62, 62, 0.2);
-  border-color: #E53E3E;
-  transform: translateY(-2px);
+  background: #fecaca;
+  transform: translateY(-1px);
 }
 
 /* ── Responsive ────────────────────────────────── */
 @media (max-width: 1024px) {
   .nav-links {
-    gap: 1rem;
+    gap: 0.5rem;
   }
 }
 
 @media (max-width: 768px) {
-  .navbar {
-    padding: 0 1rem;
-  }
-
   .nav-links {
     display: none;
   }

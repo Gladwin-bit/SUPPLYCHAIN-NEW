@@ -91,6 +91,8 @@ const seedData = async () => {
             name: p.name,
             manufacturer: manufacturerId,
             manufacturerAddress: '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266', // Hardcoded match
+            loomLocation: "Main Factory, Loom 1",
+            weaveDate: new Date(),
             consumerSecretHash: '0x' + 'a'.repeat(64), // Mock 32-byte hash
             currentHandoverKey: null,
             productCertificate: {

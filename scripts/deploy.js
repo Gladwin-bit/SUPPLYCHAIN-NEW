@@ -14,6 +14,12 @@ async function main() {
   const addressPath = path.join(process.cwd(), "frontend", "src", "contract-address.json");
   fs.writeFileSync(addressPath, JSON.stringify({ address }, null, 2));
   console.log("Address saved to:", addressPath);
+
+  // Also copy the ABI so the frontend always matches the deployed contract
+  const artifactPath = path.join(process.cwd(), "artifacts", "contracts", "SupplyChain.sol", "SupplyChain.json");
+  const abiDestPath = path.join(process.cwd(), "frontend", "src", "SupplyChain.json");
+  fs.copyFileSync(artifactPath, abiDestPath);
+  console.log("ABI copied to:", abiDestPath);
 }
 
 main().catch((err) => {

@@ -63,12 +63,26 @@ contract SupplyChain is AccessControl {
         VerificationLog[] verificationHistory; // Cooperative/Others verification
         CustomerClaim customerClaim;
         string productCertificate;  // IPFS Hash of Certificate
+        uint256 batchId;            // New: Link to a batch (0 if none)
+    }
+
+    struct Batch {
+        uint256 id;
+        uint256[] productIds;
+        address currentOwner;
+        State state;
+        bytes32 currentHandoverHash;
+        bool exists;
+        bool isActive; // True until broken up
     }
 
     uint256 private _productCounter = 0;
     mapping(uint256 => Product) public products;
     mapping(uint256 => HistoryEntry[]) public productHistory;
     
+    uint256 private _batchCounter = 0;
+    mapping(uint256 => Batch) public batches;
+
     // User authorization certificates stored on IPFS
     mapping(address => string) public userCertificateIPFS;
 
@@ -79,6 +93,9 @@ contract SupplyChain is AccessControl {
     event OwnershipTransferred(uint indexed id, address indexed from, address indexed to);
     event CustomerOwnershipClaimed(uint256 indexed id, address indexed customer, string customerName, string location, uint256 timestamp);
     event UserCertificateRegistered(address indexed user, string ipfsHash);
+    
+    event BatchCreated(uint256 indexed batchId, uint256[] productIds, address indexed creator);
+    event CustodyTransferredBatch(uint256 indexed batchId, address indexed from, address indexed to, string location);
 
     // --- Modifiers ---
     modifier onlyCurrentOwner(uint256 _id) {
@@ -137,10 +154,71 @@ contract SupplyChain is AccessControl {
         newProduct.isConsumed = false;
         newProduct.exists = true;
         newProduct.productCertificate = _productCertificate;
+        newProduct.batchId = 0;
 
         _pushHistory(newId, State.Created, _loomLocation);
         emit ProductCreated(newId, msg.sender, _name, _loomLocation);
         return newId;
+    }
+
+    /**
+     * @notice Bulk registration of sarees sharing a handover key.
+     * @dev Creates multiple Product entries in a single transaction.
+     * @param _name Saree name (shared)
+     * @param _loomLocation Loom location (shared)
+     * @param _weaveDate Weave date (shared)
+     * @param _consumerSecretHashes Array of unique scratch‑off code hashes
+     * @param _firstHandoverHash Hash of the shared handover key
+     * @param _productCertificate IPFS hash of the certificate (shared)
+     * @return batchId The newly created Batch ID
+     * @return ids Array of newly created product IDs
+     */
+    function createProductsBulk(
+        string calldata _name,
+        string calldata _loomLocation,
+        uint256 _weaveDate,
+        bytes32[] calldata _consumerSecretHashes,
+        bytes32 _firstHandoverHash,
+        string calldata _productCertificate
+    ) external onlyRole(WEAVER_ROLE) returns (uint256 batchId, uint256[] memory ids) {
+        require(_consumerSecretHashes.length > 0, "Bulk: empty hash list");
+        
+        _batchCounter++;
+        batchId = _batchCounter;
+        ids = new uint256[](_consumerSecretHashes.length);
+        
+        for (uint256 i = 0; i < _consumerSecretHashes.length; ++i) {
+            _productCounter++;
+            uint256 newId = _productCounter;
+            Product storage newProduct = products[newId];
+            newProduct.id = newId;
+            newProduct.name = _name;
+            newProduct.loomLocation = _loomLocation;
+            newProduct.weaveDate = _weaveDate;
+            newProduct.currentOwner = msg.sender;
+            newProduct.state = State.Created;
+            newProduct.consumerSecretHash = _consumerSecretHashes[i];
+            newProduct.currentHandoverHash = _firstHandoverHash;
+            newProduct.isConsumed = false;
+            newProduct.exists = true;
+            newProduct.productCertificate = _productCertificate;
+            newProduct.batchId = batchId;
+            
+            _pushHistory(newId, State.Created, _loomLocation);
+            emit ProductCreated(newId, msg.sender, _name, _loomLocation);
+            ids[i] = newId;
+        }
+
+        Batch storage newBatch = batches[batchId];
+        newBatch.id = batchId;
+        newBatch.productIds = ids;
+        newBatch.currentOwner = msg.sender;
+        newBatch.state = State.Created;
+        newBatch.currentHandoverHash = _firstHandoverHash;
+        newBatch.exists = true;
+        newBatch.isActive = true;
+
+        emit BatchCreated(batchId, ids, msg.sender);
     }
 
     /**
@@ -211,6 +289,64 @@ contract SupplyChain is AccessControl {
         
         _pushHistory(_id, products[_id].state, _location);
         emit CustodyTransferred(_id, prevOwner, msg.sender, _location);
+    }
+
+    /**
+     * @notice Bulk B2B Custody Transfer via Batch ID
+     * @dev Transfer custody of an entire active batch using its Batch ID.
+     * @param _batchId The ID of the batch to transfer
+     * @param _incomingKey The shared handover key (plaintext)
+     * @param _nextKeyHash Hash of the new handover key for post-transfer
+     * @param _location Transfer location
+     */
+    function transferBatchCustody(
+        uint256 _batchId,
+        string calldata _incomingKey,
+        bytes32 _nextKeyHash,
+        string calldata _location
+    ) external {
+        Batch storage batch = batches[_batchId];
+        require(batch.exists, "Lookup: Batch ID does not exist");
+        require(batch.isActive, "Logic: Batch is no longer active");
+        require(batch.state != State.Sold, "Security: Batch already sold");
+
+        bytes32 incomingHash = keccak256(abi.encodePacked(_incomingKey));
+        require(
+            incomingHash == batch.currentHandoverHash,
+            "Security: Invalid handover key for batch"
+        );
+
+        address prevOwner = batch.currentOwner;
+        batch.currentOwner = msg.sender;
+
+        // Determine new state based on role
+        State newState;
+        if (hasRole(SHOP_ROLE, msg.sender)) {
+            newState = State.AtShop;
+        } else {
+            newState = State.InTransit;
+        }
+        
+        batch.state = newState;
+        batch.currentHandoverHash = _nextKeyHash;
+
+        // Transfer all constituent products
+        for (uint256 i = 0; i < batch.productIds.length; ++i) {
+            uint256 _id = batch.productIds[i];
+            Product storage product = products[_id];
+            
+            // Safety checks per product
+            if (product.exists && product.state != State.Sold) {
+                product.currentOwner = msg.sender;
+                product.state = newState;
+                product.currentHandoverHash = _nextKeyHash;
+                
+                _pushHistory(_id, newState, _location);
+                emit CustodyTransferred(_id, prevOwner, msg.sender, _location);
+            }
+        }
+
+        emit CustodyTransferredBatch(_batchId, prevOwner, msg.sender, _location);
     }
 
     /**

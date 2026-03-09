@@ -7,7 +7,7 @@ export const useSupplyChain = () => {
     const context = useSupplyChainContext();
     const {
         account, contract, readOnlyContract, connectWallet,
-        createProduct, getProductData, hasRole,
+        createProduct, createProductsBulk, getProductData, hasRole,
         ROLES, PRODUCT_STATES
     } = context;
 
@@ -30,6 +30,25 @@ export const useSupplyChain = () => {
             console.error("Transfer Custody Error:", error);
             console.error("Error message:", error.message);
             console.error("Error reason:", error.reason);
+            throw error;
+        }
+    };
+
+    const transferBatchCustody = async (batchId, incomingKey, nextKey, location) => {
+        if (!contract) throw new Error("Connection: Wallet not connected");
+
+        try {
+            console.log("Batch Transfer Custody - Input:", { batchId, incomingKey, nextKey, location });
+            const nextHash = ethers.keccak256(ethers.toUtf8Bytes(nextKey));
+
+            toast.info(`Transferring Batch #${batchId}...`);
+            const tx = await contract.transferBatchCustody(batchId, incomingKey, nextHash, location);
+            console.log("Batch transaction sent:", tx.hash);
+            await tx.wait();
+            toast.success(`Batch #${batchId} Transferred! 🔄`);
+            return { txHash: tx.hash, batchId };
+        } catch (error) {
+            console.error("Batch Transfer Custody Error:", error);
             throw error;
         }
     };
@@ -112,10 +131,31 @@ export const useSupplyChain = () => {
         toast.error("Role Revoked! 🛑");
     };
 
+    const getBatchData = async (batchId) => {
+        const targetContract = contract || readOnlyContract;
+        if (!targetContract) throw new Error("Initializing blockchain provider...");
+
+        try {
+            const b = await targetContract.getBatch(batchId);
+            if (!b.exists) return null;
+            return {
+                id: b.id.toString(),
+                productIds: b.productIds.map(id => id.toString()),
+                currentOwner: b.currentOwner,
+                state: Number(b.state),
+                exists: b.exists,
+                isActive: b.isActive
+            };
+        } catch (err) {
+            console.error("error fetching batch from blockchain", err);
+            return null;
+        }
+    };
+
     return {
         account, connectWallet, contract, readOnlyContract,
-        createProduct, transferCustody, claimProduct, transferOwnership,
-        getProductData, hasRole, grantRole, revokeRole, recordVerification,
+        createProduct, createProductsBulk, transferCustody, transferBatchCustody, claimProduct, transferOwnership,
+        getProductData, getBatchData, hasRole, grantRole, revokeRole, recordVerification,
         claimCustomerOwnership,  // Keep for backward compatibility during transition
         ROLES, PRODUCT_STATES
     };

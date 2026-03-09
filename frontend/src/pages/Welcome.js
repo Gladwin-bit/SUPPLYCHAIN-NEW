@@ -64,10 +64,7 @@ const Welcome = () => {
     return (
         <SmoothScroll>
             <div className="welcome-page">
-                <div className="dynamic-glow glow-1"></div>
-                <div className="dynamic-glow glow-2"></div>
                 <section className="welcome-hero">
-
                     <div className="hero-content">
                         <motion.div
                             initial={{ opacity: 0, y: 30 }}
@@ -148,7 +145,7 @@ const Welcome = () => {
                                     whileInView={{ opacity: 1, y: 0 }}
                                     viewport={{ once: true }}
                                     transition={{ delay: i * 0.1 }}
-                                    className="feature-card glass"
+                                    className="feature-card"
                                 >
                                     <span className="feature-icon">{f.icon}</span>
                                     <h3>{f.title}</h3>
@@ -162,8 +159,8 @@ const Welcome = () => {
                 <section className="cta-section">
                     <ScrollReveal direction="up" distance={50}>
                         <motion.div
-                            className="cta-card glass"
-                            whileHover={{ scale: 1.02 }}
+                            className="cta-card"
+                            whileHover={{ scale: 1.01 }}
                             transition={{ type: "spring", stiffness: 300 }}
                         >
                             <h2>Ready to register your sarees?</h2>

@@ -352,9 +352,16 @@ const RecordProcedure = () => {
             {/* ── Page Header ─────────────────────────── */}
             <div className="rp-hero">
                 <div className="rp-hero-inner">
-                    <span className="rp-badge">KASARAGOD WEAVERS</span>
-                    <h1 className="rp-title">Saree Registry</h1>
-                    <p className="rp-sub">Digitally certify authentic handloom sarees on the blockchain</p>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        <div>
+                            <span className="rp-badge">KASARAGOD WEAVERS</span>
+                            <h1 className="rp-title">Saree Registry</h1>
+                            <p className="rp-sub">Digitally certify authentic handloom sarees on the blockchain</p>
+                        </div>
+                        <Link to="/create-bulk" className="rp-badge" style={{ cursor: 'pointer', background: 'rgba(212,175,55,0.15)', border: '1px solid rgba(212,175,55,0.3)', textDecoration: 'none' }}>
+                            📦 Switch to Bulk Mode
+                        </Link>
+                    </div>
                 </div>
             </div>
 

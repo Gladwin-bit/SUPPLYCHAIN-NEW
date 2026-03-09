@@ -10,6 +10,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { SupplyChainProvider, useSupplyChainContext } from './context/SupplyChainContext';
 import { ConnectButton } from './components/ConnectButton';
 import ProtectedRoute from './components/ProtectedRoute';
+import NextStepBanner from './components/NextStepBanner';
 import './App.css';
 import './components/NavBar.css';
 
@@ -26,6 +27,8 @@ const TraceProduct = lazy(() => import('./pages/TraceProduct'));
 const UploadQR = lazy(() => import('./pages/UploadQR'));
 const ConsumerView = lazy(() => import('./pages/ConsumerView'));
 const BlockchainExplorer = lazy(() => import('./pages/BlockchainExplorer'));
+const BulkRegister = lazy(() => import('./components/BulkRegister'));
+const BatchShowcase = lazy(() => import('./pages/BatchShowcase'));
 
 function Navbar() {
     const { account, connectWallet } = useSupplyChainContext();
@@ -51,6 +54,7 @@ function Navbar() {
                     )}
                     <NavLink to="/verify" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Verify</NavLink>
                     <NavLink to="/trace" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Trace</NavLink>
+                    <NavLink to="/batch-showcase" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Batches</NavLink>
                     <NavLink to="/explorer" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Blockchain</NavLink>
                     <NavLink to="/profile" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Profile</NavLink>
 
@@ -131,6 +135,11 @@ function AnimatedRoutes() {
                             <PageWrapper><RecordProcedure /></PageWrapper>
                         </ProtectedRoute>
                     } />
+                    <Route path="/create-bulk" element={
+                        <ProtectedRoute roles={['manufacturer']}>
+                            <PageWrapper><BulkRegister /></PageWrapper>
+                        </ProtectedRoute>
+                    } />
                     <Route path="/trace" element={
                         <ProtectedRoute>
                             <PageWrapper><TraceProduct /></PageWrapper>
@@ -149,6 +158,11 @@ function AnimatedRoutes() {
                     <Route path="/explorer" element={
                         <ProtectedRoute>
                             <PageWrapper><BlockchainExplorer /></PageWrapper>
+                        </ProtectedRoute>
+                    } />
+                    <Route path="/batch-showcase" element={
+                        <ProtectedRoute>
+                            <PageWrapper><BatchShowcase /></PageWrapper>
                         </ProtectedRoute>
                     } />
                     <Route path="/profile" element={
@@ -197,8 +211,8 @@ function App() {
                 <ThemeProvider>
                     <Router>
                         <div className="App">
-                            <div className="mesh-gradient"></div>
                             <Navbar />
+                            <NextStepBanner />
                             <AnimatedRoutes />
 
                             <ToastContainer
