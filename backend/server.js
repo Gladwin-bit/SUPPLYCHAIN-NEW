@@ -10,6 +10,7 @@ import { dirname } from 'path';
 import authRoutes from './routes/auth.js';
 import certificateRoutes from './routes/certificate.js';
 import productRoutes from './routes/product.js';
+import batchRoutes from './routes/batch.js';
 import signatureRoutes from './routes/signature.js';
 import emailRoutes from './routes/email.js';
 
@@ -39,6 +40,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/api/auth', authRoutes);
 app.use('/api/certificates', certificateRoutes);
 app.use('/api/products', productRoutes);
+app.use('/api/batch', batchRoutes);
 app.use('/api/signature', signatureRoutes);
 app.use('/api/email', emailRoutes);
 

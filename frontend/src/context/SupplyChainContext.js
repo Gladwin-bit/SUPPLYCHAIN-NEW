@@ -11,7 +11,7 @@ const abi = SupplyChainArtifact.abi;
 
 export const ROLES = {
     ADMIN: "0x0000000000000000000000000000000000000000000000000000000000000000",
-    WEAVER: ethers.keccak256(ethers.toUtf8Bytes("WEAVER")),
+    MANUFACTURER: ethers.keccak256(ethers.toUtf8Bytes("MANUFACTURER")),
     COOPERATIVE: ethers.keccak256(ethers.toUtf8Bytes("COOPERATIVE")),
     DISTRIBUTOR: ethers.keccak256(ethers.toUtf8Bytes("DISTRIBUTOR")),
     SHOP: ethers.keccak256(ethers.toUtf8Bytes("SHOP"))
@@ -110,7 +110,7 @@ export const SupplyChainProvider = ({ children }) => {
         const tx = await contract.createProduct(...args);
         await tx.wait();
 
-        toast.success(`Saree #${productId} Registered! 🥻`);
+        toast.success(`Product #${productId} Registered!`);
         return { productId, txHash: tx.hash };
     };
 
@@ -140,7 +140,7 @@ export const SupplyChainProvider = ({ children }) => {
             })
             .filter(id => id !== null);
 
-        toast.success(`${productIds.length} Sarees Registered in Bulk! Batch #${newBatchId || "N/A"} 🥻`);
+        toast.success(`${productIds.length} Products Registered in Bulk! Batch #${newBatchId || "N/A"}`);
         return { productIds, batchId: newBatchId, txHash: tx.hash };
     };
 

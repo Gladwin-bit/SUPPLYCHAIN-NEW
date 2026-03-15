@@ -10,7 +10,7 @@ async function resetDB() {
     const db = mongoose.connection.db;
 
     const collections = await db.listCollections().toArray();
-    const toDelete = ["products", "users"];
+    const toDelete = ["products", "users", "batches"];
 
     for (const name of toDelete) {
         const exists = collections.find((c) => c.name === name);

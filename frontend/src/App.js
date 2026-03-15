@@ -28,6 +28,7 @@ const UploadQR = lazy(() => import('./pages/UploadQR'));
 const ConsumerView = lazy(() => import('./pages/ConsumerView'));
 const BlockchainExplorer = lazy(() => import('./pages/BlockchainExplorer'));
 const BulkRegister = lazy(() => import('./components/BulkRegister'));
+const ProductScan  = lazy(() => import('./pages/ProductScan'));
 const BatchShowcase = lazy(() => import('./pages/BatchShowcase'));
 
 function Navbar() {
@@ -38,8 +39,8 @@ function Navbar() {
         <nav className="navbar">
             <div className="nav-brand">
                 <Link to={isAuthenticated ? "/" : "/welcome"}>
-                    <span className="logo-icon">🥻</span>
-                    <span className="logo-text">Kasaragod Sarees</span>
+                    <span className="logo-icon">⬡</span>
+                    <span className="logo-text">ChainProof</span>
                 </Link>
             </div>
 
@@ -106,87 +107,89 @@ function AnimatedRoutes() {
     const location = useLocation();
     const { isAuthenticated } = useAuth();
 
+    const Fallback = (
+        <div className="loading-screen">
+            <motion.div
+                className="loading-logo"
+                animate={{ rotate: 360 }}
+                transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+            >⬡</motion.div>
+            <p>Weaving your experience...</p>
+        </div>
+    );
+
     return (
-        <Suspense fallback={
-            <div className="loading-screen">
-                <motion.div
-                    className="loading-logo"
-                    animate={{ rotate: 360 }}
-                    transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-                >🥻</motion.div>
-                <p>Weaving your experience...</p>
-            </div>
-        }>
-            <AnimatePresence mode="wait">
-                <Routes location={location} key={location.pathname}>
-                    {/* Public routes */}
-                    <Route path="/welcome" element={<PageWrapper><Welcome /></PageWrapper>} />
-                    <Route path="/login" element={<PageWrapper><Login /></PageWrapper>} />
-                    <Route path="/register" element={<PageWrapper><Register /></PageWrapper>} />
+        <AnimatePresence mode="wait">
+            <Routes location={location} key={location.pathname}>
+                {/* Public routes */}
+                <Route path="/welcome" element={<Suspense fallback={Fallback}><PageWrapper><Welcome /></PageWrapper></Suspense>} />
+                <Route path="/login" element={<Suspense fallback={Fallback}><PageWrapper><Login /></PageWrapper></Suspense>} />
+                <Route path="/register" element={<Suspense fallback={Fallback}><PageWrapper><Register /></PageWrapper></Suspense>} />
+                {/* Public consumer-facing product scan & verification page — no login required */}
+                <Route path="/product/:id" element={<Suspense fallback={Fallback}><PageWrapper><ProductScan /></PageWrapper></Suspense>} />
 
-                    {/* Protected routes */}
-                    <Route path="/" element={
-                        <ProtectedRoute>
-                            <PageWrapper><Home /></PageWrapper>
-                        </ProtectedRoute>
-                    } />
-                    <Route path="/create" element={
-                        <ProtectedRoute roles={['manufacturer']}>
-                            <PageWrapper><RecordProcedure /></PageWrapper>
-                        </ProtectedRoute>
-                    } />
-                    <Route path="/create-bulk" element={
-                        <ProtectedRoute roles={['manufacturer']}>
-                            <PageWrapper><BulkRegister /></PageWrapper>
-                        </ProtectedRoute>
-                    } />
-                    <Route path="/trace" element={
-                        <ProtectedRoute>
-                            <PageWrapper><TraceProduct /></PageWrapper>
-                        </ProtectedRoute>
-                    } />
-                    <Route path="/custody" element={
-                        <ProtectedRoute roles={['manufacturer', 'distributor', 'retailer', 'intermediate']}>
-                            <PageWrapper><ManageCustody /></PageWrapper>
-                        </ProtectedRoute>
-                    } />
-                    <Route path="/verify" element={
-                        <ProtectedRoute>
-                            <PageWrapper><VerifyProduct /></PageWrapper>
-                        </ProtectedRoute>
-                    } />
-                    <Route path="/explorer" element={
-                        <ProtectedRoute>
-                            <PageWrapper><BlockchainExplorer /></PageWrapper>
-                        </ProtectedRoute>
-                    } />
-                    <Route path="/batch-showcase" element={
-                        <ProtectedRoute>
-                            <PageWrapper><BatchShowcase /></PageWrapper>
-                        </ProtectedRoute>
-                    } />
-                    <Route path="/profile" element={
-                        <ProtectedRoute>
-                            <PageWrapper><Profile /></PageWrapper>
-                        </ProtectedRoute>
-                    } />
+                {/* Protected routes */}
+                <Route path="/" element={
+                    <ProtectedRoute>
+                        <Suspense fallback={Fallback}><PageWrapper><Home /></PageWrapper></Suspense>
+                    </ProtectedRoute>
+                } />
+                <Route path="/create" element={
+                    <ProtectedRoute roles={['manufacturer']}>
+                        <Suspense fallback={Fallback}><PageWrapper><RecordProcedure /></PageWrapper></Suspense>
+                    </ProtectedRoute>
+                } />
+                <Route path="/create-bulk" element={
+                    <ProtectedRoute roles={['manufacturer']}>
+                        <Suspense fallback={Fallback}><PageWrapper><BulkRegister /></PageWrapper></Suspense>
+                    </ProtectedRoute>
+                } />
+                <Route path="/trace" element={
+                    <ProtectedRoute>
+                        <Suspense fallback={Fallback}><PageWrapper><TraceProduct /></PageWrapper></Suspense>
+                    </ProtectedRoute>
+                } />
+                <Route path="/custody" element={
+                    <ProtectedRoute roles={['manufacturer', 'distributor', 'retailer', 'intermediate']}>
+                        <Suspense fallback={Fallback}><PageWrapper><ManageCustody /></PageWrapper></Suspense>
+                    </ProtectedRoute>
+                } />
+                <Route path="/verify" element={
+                    <ProtectedRoute>
+                        <Suspense fallback={Fallback}><PageWrapper><VerifyProduct /></PageWrapper></Suspense>
+                    </ProtectedRoute>
+                } />
+                <Route path="/explorer" element={
+                    <ProtectedRoute>
+                        <Suspense fallback={Fallback}><PageWrapper><BlockchainExplorer /></PageWrapper></Suspense>
+                    </ProtectedRoute>
+                } />
+                <Route path="/batch-showcase" element={
+                    <ProtectedRoute>
+                        <Suspense fallback={Fallback}><PageWrapper><BatchShowcase /></PageWrapper></Suspense>
+                    </ProtectedRoute>
+                } />
+                <Route path="/profile" element={
+                    <ProtectedRoute>
+                        <Suspense fallback={Fallback}><PageWrapper><Profile /></PageWrapper></Suspense>
+                    </ProtectedRoute>
+                } />
 
-                    <Route path="/upload-qr" element={
-                        <ProtectedRoute>
-                            <PageWrapper><UploadQR /></PageWrapper>
-                        </ProtectedRoute>
-                    } />
-                    <Route path="/dashboard/:productId" element={
-                        <ProtectedRoute>
-                            <PageWrapper><ConsumerView /></PageWrapper>
-                        </ProtectedRoute>
-                    } />
+                <Route path="/upload-qr" element={
+                    <ProtectedRoute>
+                        <Suspense fallback={Fallback}><PageWrapper><UploadQR /></PageWrapper></Suspense>
+                    </ProtectedRoute>
+                } />
+                <Route path="/dashboard/:productId" element={
+                    <ProtectedRoute>
+                        <Suspense fallback={Fallback}><PageWrapper><ConsumerView /></PageWrapper></Suspense>
+                    </ProtectedRoute>
+                } />
 
-                    {/* Redirect root based on auth status */}
-                    <Route path="*" element={<Navigate to={isAuthenticated ? "/" : "/welcome"} replace />} />
-                </Routes>
-            </AnimatePresence>
-        </Suspense>
+                {/* Redirect root based on auth status */}
+                <Route path="*" element={<Navigate to={isAuthenticated ? "/" : "/welcome"} replace />} />
+            </Routes>
+        </AnimatePresence>
     );
 }
 

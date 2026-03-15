@@ -11,7 +11,7 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 contract SupplyChain is AccessControl {
     
     // --- Phase 1: Access Control (RBAC) ---
-    bytes32 public constant WEAVER_ROLE      = keccak256("WEAVER");
+    bytes32 public constant MANUFACTURER_ROLE = keccak256("MANUFACTURER");
     bytes32 public constant COOPERATIVE_ROLE = keccak256("COOPERATIVE");
     bytes32 public constant DISTRIBUTOR_ROLE = keccak256("DISTRIBUTOR");
     bytes32 public constant SHOP_ROLE        = keccak256("SHOP");
@@ -76,11 +76,12 @@ contract SupplyChain is AccessControl {
         bool isActive; // True until broken up
     }
 
-    uint256 private _productCounter = 0;
+    uint256 private _productCounter = 0;        // For single products only
+    uint256 private _batchCounter = 0;          // For batch numbering (A, B, C...)
+    uint256 private _bulkProductCounter = 0;    // For products within batches
+
     mapping(uint256 => Product) public products;
     mapping(uint256 => HistoryEntry[]) public productHistory;
-    
-    uint256 private _batchCounter = 0;
     mapping(uint256 => Batch) public batches;
 
     // User authorization certificates stored on IPFS
@@ -115,11 +116,11 @@ contract SupplyChain is AccessControl {
 
     constructor() {
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
-        _grantRole(WEAVER_ROLE, msg.sender);
+        _grantRole(MANUFACTURER_ROLE, msg.sender);
     }
 
     /**
-     * @notice Weaver Registers Saree
+     * @notice Manufacturer Registers Saree
      * @param _name Saree Name
      * @param _loomLocation Location of the Loom
      * @param _weaveDate Timestamp of weaving completion
@@ -136,7 +137,7 @@ contract SupplyChain is AccessControl {
         string calldata _productCertificate
     ) 
         external 
-        onlyRole(WEAVER_ROLE)
+        onlyRole(MANUFACTURER_ROLE)
         returns (uint256) 
     {
         _productCounter++;
@@ -180,7 +181,7 @@ contract SupplyChain is AccessControl {
         bytes32[] calldata _consumerSecretHashes,
         bytes32 _firstHandoverHash,
         string calldata _productCertificate
-    ) external onlyRole(WEAVER_ROLE) returns (uint256 batchId, uint256[] memory ids) {
+    ) external onlyRole(MANUFACTURER_ROLE) returns (uint256 batchId, uint256[] memory ids) {
         require(_consumerSecretHashes.length > 0, "Bulk: empty hash list");
         
         _batchCounter++;
@@ -188,8 +189,8 @@ contract SupplyChain is AccessControl {
         ids = new uint256[](_consumerSecretHashes.length);
         
         for (uint256 i = 0; i < _consumerSecretHashes.length; ++i) {
-            _productCounter++;
-            uint256 newId = _productCounter;
+            _bulkProductCounter++;
+            uint256 newId = _bulkProductCounter + 1000000; // Offset to avoid conflicts
             Product storage newProduct = products[newId];
             newProduct.id = newId;
             newProduct.name = _name;
@@ -417,5 +418,100 @@ contract SupplyChain is AccessControl {
 
     function getUserCertificate(address _userAddress) external view returns (string memory) {
         return userCertificateIPFS[_userAddress];
+    }
+
+    // --- ID Formatting Utilities ---
+
+    /**
+     * @notice Convert number to letter format (1->A, 2->B, 27->AA, 28->AB...)
+     * @param _num The number to convert (1-based)
+     * @return The letter representation
+     */
+    function numberToLetters(uint256 _num) public pure returns (string memory) {
+        require(_num > 0, "Number must be greater than 0");
+
+        bytes memory result;
+        uint256 num = _num - 1; // Convert to 0-based for calculation
+
+        do {
+            result = abi.encodePacked(result, bytes1(uint8(65 + (num % 26))));
+            num = num / 26;
+        } while (num > 0);
+
+        // Reverse the string
+        bytes memory reversed = new bytes(result.length);
+        for (uint256 i = 0; i < result.length; i++) {
+            reversed[i] = result[result.length - 1 - i];
+        }
+
+        return string(reversed);
+    }
+
+    /**
+     * @notice Get formatted ID for display purposes
+     * @param _id The numeric product ID
+     * @return Formatted ID string
+     */
+    function getFormattedProductId(uint256 _id) public view productExists(_id) returns (string memory) {
+        Product memory product = products[_id];
+
+        if (product.batchId == 0) {
+            // Single product: return #1, #2, #3...
+            return string(abi.encodePacked("#", _uint2str(_id)));
+        } else {
+            // Bulk product: return A1, A2, B1, B2...
+            string memory batchLetter = numberToLetters(product.batchId);
+            // Calculate position within batch (1-based)
+            uint256 positionInBatch = _getPositionInBatch(_id, product.batchId);
+            return string(abi.encodePacked(batchLetter, _uint2str(positionInBatch)));
+        }
+    }
+
+    /**
+     * @notice Get formatted batch ID (A, B, C, AA...)
+     * @param _batchId The numeric batch ID
+     * @return Formatted batch ID string
+     */
+    function getFormattedBatchId(uint256 _batchId) public pure returns (string memory) {
+        require(_batchId > 0, "Invalid batch ID");
+        return numberToLetters(_batchId);
+    }
+
+    /**
+     * @notice Helper to find position of product within its batch
+     */
+    function _getPositionInBatch(uint256 _productId, uint256 _batchId) internal view returns (uint256) {
+        Batch memory batch = batches[_batchId];
+        for (uint256 i = 0; i < batch.productIds.length; i++) {
+            if (batch.productIds[i] == _productId) {
+                return i + 1; // 1-based position
+            }
+        }
+        return 1; // Fallback
+    }
+
+    /**
+     * @notice Convert uint256 to string
+     */
+    function _uint2str(uint256 _i) internal pure returns (string memory) {
+        if (_i == 0) {
+            return "0";
+        }
+        uint256 j = _i;
+        uint256 len;
+        while (j != 0) {
+            len++;
+            j /= 10;
+        }
+        bytes memory bstr = new bytes(len);
+        uint256 k = len;
+        while (_i != 0) {
+            k = k - 1;
+            uint8 temp = (48 + uint8(_i % 10));
+            bytes1 b1 = bytes1(temp);
+            bstr[k] = b1;
+            _i /= 10;
+        }
+        return string(bstr);
     }
 }

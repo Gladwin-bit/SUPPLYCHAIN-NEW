@@ -50,15 +50,65 @@ const UploadQR = () => {
                         const code = jsQR(imageData.data, imageData.width, imageData.height);
 
                         if (code) {
-                            // Parse the QR code data
-                            const qrData = JSON.parse(code.data);
-                            const productId = qrData.productId || qrData.id;
+                            let scannedId = null;
+                            let scannedBatchId = null;
 
-                            if (productId) {
+                            try {
+                                // Parse old JSON format
+                                const qrData = JSON.parse(code.data);
+                                scannedId = qrData.productId || qrData.id;
+                            } catch (e) {
+                                // Try parsing as URL (new way from BulkRegister)
+                                try {
+                                    const url = new URL(code.data);
+                                    if (url.pathname.includes('/product/')) {
+                                        const parts = url.pathname.split('/');
+                                        scannedId = parts[parts.length - 1]; // get ID from path
+                                        scannedBatchId = url.searchParams.get('batch'); // get batch from query string
+                                    }
+                                } catch (urlErr) {
+                                    // Not a valid URL
+                                }
+                            }
+
+                            if (scannedId) {
                                 // Fetch product details from blockchain
-                                const productData = await getProductData(productId);
+                                const productData = await getProductData(scannedId);
+                                
+                                // Retrieve batch history if part of a batch
+                                if (scannedBatchId) {
+                                    try {
+                                        const batchRes = await fetch(`http://localhost:5000/api/batch/${encodeURIComponent(scannedBatchId)}/analytics`);
+                                        if (batchRes.ok) {
+                                            const batchData = await batchRes.json();
+                                            if (batchData.success && batchData.analytics?.handoverHistory?.length) {
+                                                // Map batch handovers into timeline events
+                                                const batchEvents = batchData.analytics.handoverHistory.map(h => ({
+                                                    actor: h.toAddress || h.fromAddress || "Unknown",
+                                                    state: "In Transit (Batch)",
+                                                    timestamp: new Date(h.transferredAt).toLocaleString(),
+                                                    location: h.location || "Supply Chain Checkpoint",
+                                                    dateObj: new Date(h.transferredAt)
+                                                }));
+
+                                                // Parse product dates for sorting
+                                                const productEvents = (productData.history || []).map(h => ({
+                                                    ...h,
+                                                    dateObj: new Date(h.timestamp)
+                                                }));
+
+                                                // Merge and sort
+                                                const combinedEvents = [...productEvents, ...batchEvents].sort((a, b) => a.dateObj - b.dateObj);
+                                                productData.history = combinedEvents;
+                                            }
+                                        }
+                                    } catch (batchErr) {
+                                        console.warn("Could not fetch batch trace history:", batchErr);
+                                    }
+                                }
+                                
                                 setProduct(productData);
-                                toast.success(`Product #${productId} loaded successfully!`);
+                                toast.success(`Product #${scannedId} loaded successfully!`);
                             } else {
                                 toast.error("❌ Invalid QR code format");
                             }

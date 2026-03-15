@@ -13,6 +13,10 @@ module.exports = {
     },
   },
   networks: {
+    hardhat: {
+      blockGasLimit: 100_000_000,
+      allowUnlimitedContractSize: true,
+    },
     localhost: {
       url: "http://localhost:8545",
     },

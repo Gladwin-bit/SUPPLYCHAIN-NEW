@@ -12,7 +12,7 @@
     "@nomicfoundation/hardhat-ethers": "^3.1.0",
     "@nomicfoundation/hardhat-toolbox": "^4.0.0",
     "@types/node": "^24.8.1",
-    "hardhat": "^2.27.2",
+    "hardhat": "^2.28.6",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3"
   },
@@ -23,6 +23,7 @@
     "dotenv": "^17.2.3",
     "ethers": "^6.15.0",
     "ipfs-http-client": "^60.0.1",
+    "puppeteer": "^24.39.1",
     "reactflow": "^11.11.4"
   },
   "main": "index.js",

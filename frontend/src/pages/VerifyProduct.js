@@ -19,7 +19,7 @@ import CertificateViewer from "../components/CertificateViewer";
 import "./VerifyProduct.css";
 
 const VerifyProduct = () => {
-    const { account, connectWallet, claimCustomerOwnership, getProductData } = useSupplyChain();
+    const { account, connectWallet, claimCustomerOwnership, getProductData, getFormattedProductId, getProductDataSmart } = useSupplyChain();
     const [productId, setProductId] = useState("");
     const [secretCode, setSecretCode] = useState("");
     const [customerName, setCustomerName] = useState("");
@@ -31,6 +31,7 @@ const VerifyProduct = () => {
     const [waybillFile, setWaybillFile] = useState(null);
     const [waybillUploaded, setWaybillUploaded] = useState(false);
     const [activeTab, setActiveTab] = useState('manual');
+    const [formattedProductId, setFormattedProductId] = useState(""); // For display
 
     // Handle waybill QR upload
     const handleWaybillUpload = async (event) => {
@@ -47,24 +48,58 @@ const VerifyProduct = () => {
             const qrCodeSuccessCallback = async (decodedText) => {
                 try {
                     console.log("Waybill QR Scanned:", decodedText);
-                    const waybillData = JSON.parse(decodedText);
+                    let scannedId = null;
+                    let isWaybill = false;
 
-                    if (waybillData.productId) {
-                        setProductId(waybillData.productId);
+                    try {
+                        const waybillData = JSON.parse(decodedText);
+                        scannedId = waybillData.productId || waybillData.id;
+                        isWaybill = true;
+                    } catch (e) {
+                        try {
+                            const url = new URL(decodedText);
+                            if (url.pathname.includes('/product/')) {
+                                const parts = url.pathname.split('/');
+                                scannedId = parts[parts.length - 1]; // get ID from path
+                            }
+                        } catch (urlErr) {
+                            // Not a valid URL
+                        }
+                    }
+
+                    if (scannedId) {
+                        setProductId(scannedId);
                         setWaybillUploaded(true);
-                        toast.success("Waybill scanned! Now enter your scratch-off code.");
-                        setStatus({
-                            type: "info",
-                            title: "WAYBILL VERIFIED",
-                            msg: `Product #${waybillData.productId} identified. Enter your scratch-off code to verify authenticity.`,
-                            icon: <CheckCircle2 className="status-icon" />
-                        });
+                        toast.success(isWaybill ? "Waybill scanned! Now enter your scratch-off code." : "Product QR scanned! Now enter your scratch-off code.");
+
+                        // Format product ID for display
+                        try {
+                            const formatted = await getFormattedProductId(scannedId);
+                            setFormattedProductId(formatted);
+
+                            setStatus({
+                                type: "info",
+                                title: isWaybill ? "WAYBILL VERIFIED" : "PRODUCT IDENTIFIED",
+                                msg: `Product ${formatted} identified. Enter your scratch-off code to verify authenticity.`,
+                                icon: <CheckCircle2 className="status-icon" />
+                            });
+                        } catch (err) {
+                            console.warn("Failed to format product ID:", err);
+                            setFormattedProductId(`#${scannedId}`);
+
+                            setStatus({
+                                type: "info",
+                                title: isWaybill ? "WAYBILL VERIFIED" : "PRODUCT IDENTIFIED",
+                                msg: `Product #${scannedId} identified. Enter your scratch-off code to verify authenticity.`,
+                                icon: <CheckCircle2 className="status-icon" />
+                            });
+                        }
                     } else {
-                        throw new Error("Invalid waybill format");
+                        throw new Error("Invalid format");
                     }
                 } catch (parseError) {
                     console.error("Parse error:", parseError);
-                    toast.error("Invalid waybill QR code");
+                    toast.error("Invalid QR code format");
                     setStatus({
                         type: "error",
                         title: "INVALID WAYBILL",
@@ -105,8 +140,12 @@ const VerifyProduct = () => {
         });
 
         try {
-            const data = await getProductData(productId);
+            // Use smart lookup that handles formatted IDs (A1, B2, #3, etc.)
+            const data = await getProductDataSmart(productId);
             setProduct(data);
+
+            // Update formatted ID from the smart lookup result
+            setFormattedProductId(data.formattedId);
 
             // Fetch the Keccak256 hash of the entered secret to compare
             const { ethers } = await import("ethers");
@@ -143,7 +182,7 @@ const VerifyProduct = () => {
             setStatus({
                 type: "error",
                 title: "NOT FOUND",
-                msg: `Product #${productId} could not be located on the blockchain.`,
+                msg: `Product ${formattedProductId || `#${productId}`} could not be located on the blockchain.`,
                 icon: <AlertTriangle className="status-icon" />
             });
             toast.error("Product not found");
@@ -174,17 +213,72 @@ const VerifyProduct = () => {
 
                 if (code) {
                     try {
-                        const qrData = JSON.parse(code.data);
-                        const scannedId = qrData.productId || qrData.id;
-                        const scannedSecret = qrData.secretCode || qrData.secret;
+                        let scannedId = null;
+                        let scannedSecret = null;
+                        let scannedBatchId = null;
 
-                        if (scannedId && scannedSecret) {
+                        try {
+                            // Try JSON format first (old way)
+                            const qrData = JSON.parse(code.data);
+                            scannedId = qrData.productId || qrData.id;
+                            scannedSecret = qrData.secretCode || qrData.secret;
+                        } catch (e) {
+                            // Try parsing as URL (new way from BulkRegister)
+                            try {
+                                const url = new URL(code.data);
+                                if (url.pathname.includes('/product/')) {
+                                    const parts = url.pathname.split('/');
+                                    scannedId = parts[parts.length - 1]; // get ID from path
+                                    scannedBatchId = url.searchParams.get('batch'); // get batch from query string
+                                }
+                            } catch (urlErr) {
+                                // Not a valid URL
+                            }
+                        }
+
+                        if (scannedId) {
                             setProductId(scannedId);
-                            setSecretCode(scannedSecret);
+                            if (scannedSecret) setSecretCode(scannedSecret);
 
-                            // Fetch product data
-                            const data = await getProductData(scannedId);
+                            // Fetch product data using smart lookup
+                            const data = await getProductDataSmart(scannedId);
+                            
+                            // ----------------------------------------------------
+                            // Retrieve batch history if part of a batch
+                            // ----------------------------------------------------
+                            if (scannedBatchId) {
+                                try {
+                                    const batchRes = await fetch(`http://localhost:5000/api/batch/${encodeURIComponent(scannedBatchId)}/analytics`);
+                                    if (batchRes.ok) {
+                                        const batchData = await batchRes.json();
+                                        if (batchData.success && batchData.analytics?.handoverHistory?.length) {
+                                            // Map batch handovers into timeline events
+                                            const batchEvents = batchData.analytics.handoverHistory.map(h => ({
+                                                actor: h.toAddress || h.fromAddress || "Unknown",
+                                                state: "In Transit (Batch)",
+                                                timestamp: new Date(h.transferredAt).toLocaleString(),
+                                                location: h.location || "Supply Chain Checkpoint",
+                                                dateObj: new Date(h.transferredAt)
+                                            }));
+
+                                            // Parse product dates for sorting
+                                            const productEvents = (data.history || []).map(h => ({
+                                                ...h,
+                                                dateObj: new Date(h.timestamp)
+                                            }));
+
+                                            // Merge and sort
+                                            const combinedEvents = [...productEvents, ...batchEvents].sort((a, b) => a.dateObj - b.dateObj);
+                                            data.history = combinedEvents;
+                                        }
+                                    }
+                                } catch (batchErr) {
+                                    console.warn("Could not fetch batch trace history:", batchErr);
+                                }
+                            }
+                            
                             setProduct(data);
+                            setFormattedProductId(data.formattedId);
 
                             // Check if already claimed
                             if (data.customerClaim && data.customerClaim.isClaimed) {
@@ -194,6 +288,15 @@ const VerifyProduct = () => {
                                     msg: "This product has already been claimed by a customer.",
                                     icon: <CheckCircle2 className="status-icon" />
                                 });
+                                toast.success("Product identified successfully!");
+                            } else if (!scannedSecret) {
+                                setStatus({
+                                    type: "info",
+                                    title: "PRODUCT IDENTIFIED",
+                                    msg: "Product identified! Please proceed to the Manual Audit tab and enter your physical scratch-off secret to verify.",
+                                    icon: <CheckCircle2 className="status-icon" />
+                                });
+                                toast.info("Please complete Manual Audit");
                             } else {
                                 setStatus({
                                     type: "success",
@@ -201,15 +304,15 @@ const VerifyProduct = () => {
                                     msg: "QR code is valid. You can claim ownership of this product.",
                                     icon: <ShieldCheck className="status-icon" />
                                 });
+                                toast.success("QR Scanned Successfully!");
                             }
 
-                            toast.success("QR Scanned Successfully!");
                         } else {
                             toast.error("Invalid QR code format");
                         }
                     } catch (err) {
                         console.error(err);
-                        toast.error("Invalid QR format");
+                        toast.error("An error occurred reading the QR code data");
                     }
                 } else {
                     toast.error("No QR code found in image");
@@ -266,9 +369,10 @@ const VerifyProduct = () => {
             const result = await claimCustomerOwnership(productId, secretCode, customerName, location);
 
             if (result.status === "claimed") {
-                // Refresh product data
-                const updatedData = await getProductData(productId);
+                // Refresh product data using smart lookup
+                const updatedData = await getProductDataSmart(productId);
                 setProduct(updatedData);
+                setFormattedProductId(updatedData.formattedId);
 
                 setStatus({
                     type: "success",
@@ -510,7 +614,7 @@ const VerifyProduct = () => {
                             </div>
                             <div className="product-title-group">
                                 <h2>{product.name}</h2>
-                                <span className="id-badge">ASSET NODE #{productId}</span>
+                                <span className="id-badge">ASSET NODE {formattedProductId || `#${productId}`}</span>
                             </div>
                         </div>
 

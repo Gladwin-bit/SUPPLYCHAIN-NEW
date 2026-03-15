@@ -4,43 +4,149 @@ import { useSupplyChain } from "../hooks/useSupplyChain";
 import { ProductTimeline } from "../components/ProductTimeline";
 import { LoadingSpinner } from "../components/LoadingSpinner";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, ShieldCheck } from "lucide-react";
+import { QrCode, ShieldCheck, Upload } from "lucide-react";
 import "./TraceProduct.css";
 
 const TraceProduct = () => {
-    const { account, connectWallet, getProductData } = useSupplyChain();
-    const [productId, setProductId] = useState("");
+    const { account, connectWallet, getProductDataSmart } = useSupplyChain();
     const [product, setProduct] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
+    const [qrFile, setQrFile] = useState(null);
+    const [dragActive, setDragActive] = useState(false);
 
-    const handleTrace = async () => {
+    const decodeQRAndTrace = async (file) => {
         if (!account) {
             setError("🔒 Connect wallet to access blockchain data");
             return;
         }
-        if (!productId) {
-            setError("⚠️ Please enter a valid Asset ID");
-            return;
-        }
+        if (!file) return;
 
         setLoading(true);
         setError("");
         setProduct(null);
+        setQrFile(file);
 
         try {
-            const productData = await getProductData(productId);
-            setProduct(productData);
-        } catch (e) {
-            console.error(e);
-            if (e.message.includes("Item not found")) {
-                setError(`Asset #${productId} not found on the active ledger.`);
-            } else {
-                setError(`Error connecting to node: ${e.message}`);
-            }
-        } finally {
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                try {
+                    const image = new Image();
+                    image.src = e.target.result;
+                    image.onload = async () => {
+                        const canvas = document.createElement("canvas");
+                        const ctx = canvas.getContext("2d");
+                        canvas.width = image.width;
+                        canvas.height = image.height;
+                        ctx.drawImage(image, 0, 0);
+                        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+                        const jsQR = (await import("jsqr")).default;
+                        const code = jsQR(imageData.data, imageData.width, imageData.height);
+
+                        if (!code) {
+                            setError("❌ No QR code found in the image. Please try a clearer image.");
+                            setLoading(false);
+                            return;
+                        }
+
+                        let scannedId = null;
+                        let scannedBatchId = null;
+
+                        try {
+                            // Try waybill / legacy JSON format
+                            const qrData = JSON.parse(code.data);
+                            scannedId = qrData.productId || qrData.id;
+                            scannedBatchId = qrData.batchId || null;
+                        } catch (e) {
+                            // Try URL format (individual product QR from BulkRegister)
+                            try {
+                                const url = new URL(code.data);
+                                if (url.pathname.includes("/product/")) {
+                                    const parts = url.pathname.split("/");
+                                    scannedId = parts[parts.length - 1];
+                                    scannedBatchId = url.searchParams.get("batch");
+                                }
+                            } catch (_) {
+                                // Not a URL either
+                            }
+                        }
+
+                        if (!scannedId) {
+                            setError("❌ Invalid QR code format. Use a product label QR or batch waybill QR.");
+                            setLoading(false);
+                            return;
+                        }
+
+                        try {
+                            const productData = await getProductDataSmart(scannedId);
+
+                            // Merge batch history if a batchId was found
+                            if (scannedBatchId) {
+                                try {
+                                    const batchRes = await fetch(`http://localhost:5000/api/batch/${encodeURIComponent(scannedBatchId)}/analytics`);
+                                    if (batchRes.ok) {
+                                        const batchData = await batchRes.json();
+                                        if (batchData.success && batchData.analytics?.handoverHistory?.length) {
+                                            const batchEvents = batchData.analytics.handoverHistory.map(h => ({
+                                                actor: h.toAddress || h.fromAddress || "Unknown",
+                                                state: "In Transit (Batch)",
+                                                timestamp: new Date(h.transferredAt).toLocaleString(),
+                                                location: h.location || "Supply Chain Checkpoint",
+                                                dateObj: new Date(h.transferredAt)
+                                            }));
+                                            const productEvents = (productData.history || []).map(h => ({
+                                                ...h,
+                                                dateObj: new Date(h.timestamp)
+                                            }));
+                                            const combined = [...productEvents, ...batchEvents].sort((a, b) => a.dateObj - b.dateObj);
+                                            productData.history = combined;
+                                        }
+                                    }
+                                } catch (batchErr) {
+                                    console.warn("Could not fetch batch history:", batchErr);
+                                }
+                            }
+
+                            setProduct(productData);
+                        } catch (traceErr) {
+                            console.error(traceErr);
+                            setError(`Product not found on blockchain. The ID "${scannedId}" may be invalid.`);
+                        } finally {
+                            setLoading(false);
+                        }
+                    };
+                } catch (err) {
+                    console.error(err);
+                    setError("❌ Failed to decode QR code image.");
+                    setLoading(false);
+                }
+            };
+            reader.readAsDataURL(file);
+        } catch (err) {
+            console.error(err);
+            setError("❌ Failed to read the uploaded file.");
             setLoading(false);
         }
+    };
+
+    const handleFileInput = (e) => {
+        const file = e.target.files[0];
+        if (file) decodeQRAndTrace(file);
+    };
+
+    const handleDrag = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setDragActive(e.type === "dragenter" || e.type === "dragover");
+    };
+
+    const handleDrop = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setDragActive(false);
+        const file = e.dataTransfer.files?.[0];
+        if (file) decodeQRAndTrace(file);
     };
 
     return (
@@ -62,23 +168,35 @@ const TraceProduct = () => {
                 </div>
             ) : (
                 <div className="trace-content">
-                    {/* SEARCH SECTION */}
+                    {/* QR UPLOAD SECTION */}
                     <div className="trace-search-section">
-                        <div className="search-card">
-                            <div className="input-group search-group" style={{ maxWidth: '100%' }}>
-                                <input
-                                    type="number"
-                                    className="input-field"
-                                    placeholder="Enter Digital Thread ID (e.g., 1)"
-                                    value={productId}
-                                    onChange={(e) => setProductId(e.target.value)}
-                                    onKeyPress={(e) => e.key === 'Enter' && handleTrace()}
-                                    style={{ background: 'white', color: 'black' }}
-                                />
-                                <button className="btn-icon" onClick={handleTrace} disabled={loading}>
-                                    {loading ? "..." : <Search size={24} />}
-                                </button>
-                            </div>
+                        <div
+                            className={`qr-trace-dropzone ${dragActive ? "drag-active" : ""} ${qrFile ? "has-file" : ""}`}
+                            onDragEnter={handleDrag}
+                            onDragLeave={handleDrag}
+                            onDragOver={handleDrag}
+                            onDrop={handleDrop}
+                        >
+                            <input
+                                type="file"
+                                id="trace-qr-input"
+                                accept="image/*"
+                                onChange={handleFileInput}
+                                style={{ display: "none" }}
+                                disabled={loading}
+                            />
+                            <label htmlFor="trace-qr-input" className="qr-trace-label">
+                                <div className="qr-trace-icon">
+                                    {qrFile ? <QrCode size={40} /> : <Upload size={40} />}
+                                </div>
+                                <h3>{qrFile ? `Scanned: ${qrFile.name}` : "Upload QR Code to Trace"}</h3>
+                                <p>
+                                    {qrFile
+                                        ? "Upload a different QR to trace another product"
+                                        : "Supports individual product labels and batch waybill QR codes"}
+                                </p>
+                                <span className="qr-trace-hint">JPG · PNG · WebP — drag & drop or click to browse</span>
+                            </label>
                         </div>
                     </div>
 
@@ -89,7 +207,7 @@ const TraceProduct = () => {
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0 }}
-                                style={{ margin: '0 auto' }}
+                                style={{ margin: '2rem auto' }}
                             >
                                 {error}
                             </motion.div>
@@ -124,7 +242,7 @@ const TraceProduct = () => {
                                     <ShieldCheck size={80} color="#D4AF37" style={{ opacity: 0.1 }} />
                                 </div>
 
-                                {/* HORIZONTAL MAP SECTION */}
+                                {/* TIMELINE SECTION */}
                                 <div className="journey-map-section" style={{ marginTop: '4rem' }}>
                                     <div className="map-header">
                                         <div className="live-indicator" />

@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import { useSupplyChain } from "../hooks/useSupplyChain";
 import { motion, AnimatePresence } from "framer-motion";
+import { formattedIdToNumeric } from "../utils/idConversion";
 import "./BatchShowcase.css";
 
 const PRODUCT_STATES = ["Created", "Verified", "In Transit", "At Shop", "Sold", "In Transit P2P"];
@@ -9,7 +10,7 @@ const STATE_CLASSES = ["state-created", "state-verified", "state-intransit", "st
 
 const BatchShowcase = () => {
     const { readOnlyContract, contract } = useSupplyChain();
-    const [startId, setStartId] = useState(1);
+    const [startId, setStartId] = useState("1");
     const [count, setCount] = useState(5);
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -28,10 +29,25 @@ const BatchShowcase = () => {
         setProducts([]);
         setQueried(true);
 
+        // Resolve Start ID — accepts numeric (1, 2) or formatted (A1, B1, B2)
+        let numericStartId;
+        const trimmed = String(startId).trim();
+        if (!isNaN(trimmed) && trimmed !== '') {
+            numericStartId = parseInt(trimmed, 10);
+        } else {
+            const resolved = await formattedIdToNumeric(trimmed, target);
+            if (!resolved) {
+                setError(`Cannot resolve Start ID "${startId}". Use numeric (1, 2) or formatted (A1, B1, B2) IDs.`);
+                setLoading(false);
+                return;
+            }
+            numericStartId = Number(resolved);
+        }
+
         try {
             const results = [];
             for (let i = 0; i < count; i++) {
-                const id = startId + i;
+                const id = numericStartId + i;
                 try {
                     const p = await target.getProduct(id);
                     if (p.exists) {
@@ -98,10 +114,10 @@ const BatchShowcase = () => {
                         <div className="batch-query-field">
                             <label>Start ID</label>
                             <input
-                                type="number"
-                                min="1"
+                                type="text"
+                                placeholder="e.g. 1, A1, B1"
                                 value={startId}
-                                onChange={(e) => setStartId(Math.max(1, parseInt(e.target.value) || 1))}
+                                onChange={(e) => setStartId(e.target.value)}
                                 disabled={loading}
                             />
                         </div>

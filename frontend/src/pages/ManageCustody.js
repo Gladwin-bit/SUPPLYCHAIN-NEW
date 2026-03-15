@@ -15,7 +15,7 @@ import "./ManageCustody.css";
 import { ConnectButton } from "../components/ConnectButton";
 
 const ManageCustody = () => {
-    const { account, connectWallet, transferCustody, transferBatchCustody, getProductData, getBatchData, hasRole } = useSupplyChain();
+    const { account, connectWallet, transferCustody, transferBatchCustody, getProductData, getBatchData, hasRole, getFormattedProductId, getFormattedBatchId, getProductDataSmart, getBatchDataSmart } = useSupplyChain();
 
     // Tab state: 'single' or 'bulk'
     const [activeTab, setActiveTab] = useState('single');
@@ -52,8 +52,10 @@ const ManageCustody = () => {
 
     // Bulk Transfer States
     const [bulkBatchId, setBulkBatchId] = useState("");
+    const [bulkBatchNumericId, setBulkBatchNumericId] = useState(""); // resolved numeric ID
     const [bulkHandoverKey, setBulkHandoverKey] = useState("");
-    const [bulkNextKey, setBulkNextKey] = useState(() => Math.random().toString(36).slice(-8).toUpperCase());
+    const [bulkDispatchKey, setBulkDispatchKey] = useState(null); // Stored key fetched from backend for Dispatch QR
+    const [bulkTransferSuccess, setBulkTransferSuccess] = useState(false); // Shows new dispatch QR after transfer
     const [bulkLocation, setBulkLocation] = useState("");
     const [bulkLoading, setBulkLoading] = useState(false);
     const [bulkStatus, setBulkStatus] = useState("");
@@ -66,6 +68,10 @@ const ManageCustody = () => {
     const [bulkAction, setBulkAction] = useState('dispatch'); // 'dispatch' or 'receive'
     const [bulkBatchDetails, setBulkBatchDetails] = useState(null);
 
+    // Formatted IDs for display
+    const [formattedProductId, setFormattedProductId] = useState("");
+    const [formattedBatchId, setFormattedBatchId] = useState("");
+
     // Fetch batch details dynamically (DB with Blockchain fallback)
     React.useEffect(() => {
         const fetchBatchInfo = async () => {
@@ -74,16 +80,16 @@ const ManageCustody = () => {
                 return;
             }
             try {
-                // Try Backend first
-                const response = await fetch(`http://localhost:5000/api/products/batch/${bulkBatchId}`);
+                // Try Backend first — /api/batch handles both numeric and formatted IDs (A, B, etc.)
+                const response = await fetch(`http://localhost:5000/api/batch/${bulkBatchId}`);
                 const data = await response.json();
 
                 if (data.success && data.batch) {
                     setBulkBatchDetails(data.batch);
                 } else {
-                    // Fallback to Blockchain direct
+                    // Fallback to Blockchain via smart lookup
                     console.info("Batch not found in DB, checking blockchain...");
-                    const bcData = await getBatchData(bulkBatchId);
+                    const bcData = await getBatchDataSmart(String(bulkBatchId));
                     if (bcData) {
                         setBulkBatchDetails(bcData);
                     } else {
@@ -92,15 +98,51 @@ const ManageCustody = () => {
                 }
             } catch (err) {
                 console.error("Failed to fetch batch details", err);
-                // Last ditch effort: Blockchain direct
-                const bcData = await getBatchData(bulkBatchId);
-                setBulkBatchDetails(bcData);
+                // Last ditch effort: Smart blockchain lookup
+                try {
+                    const bcData = await getBatchDataSmart(String(bulkBatchId));
+                    setBulkBatchDetails(bcData);
+                } catch { setBulkBatchDetails(null); }
             }
         };
 
         const timer = setTimeout(fetchBatchInfo, 500);
         return () => clearTimeout(timer);
     }, [bulkBatchId, bulkAction]);
+
+    // Resolve formatted batch ID (e.g. "A") → numeric ID for blockchain calls
+    React.useEffect(() => {
+        const resolveNumericId = async () => {
+            if (!bulkBatchId) { setBulkBatchNumericId(""); return; }
+            if (!isNaN(bulkBatchId)) { setBulkBatchNumericId(Number(bulkBatchId)); return; }
+            try {
+                const batchData = await getBatchDataSmart(String(bulkBatchId));
+                setBulkBatchNumericId(Number(batchData.id));
+            } catch { setBulkBatchNumericId(""); }
+        };
+        const timer = setTimeout(resolveNumericId, 400);
+        return () => clearTimeout(timer);
+    }, [bulkBatchId]);
+
+    // Fetch stored handover key from backend whenever numeric batch ID is available
+    // This is the key generated from the LAST verified N-1 blockchain transfer (or initial registration)
+    React.useEffect(() => {
+        const fetchStoredDispatchKey = async () => {
+            if (!bulkBatchNumericId) { setBulkDispatchKey(null); return; }
+            try {
+                const res = await fetch(`http://localhost:5000/api/products/batch/${bulkBatchNumericId}/handover-key`);
+                const data = await res.json();
+                if (data.success && data.handoverKey) {
+                    setBulkDispatchKey(data.handoverKey);
+                } else {
+                    setBulkDispatchKey(null);
+                }
+            } catch {
+                setBulkDispatchKey(null);
+            }
+        };
+        fetchStoredDispatchKey();
+    }, [bulkBatchNumericId]);
 
     // Auto-reset or refresh on account change
     React.useEffect(() => {
@@ -123,16 +165,25 @@ const ManageCustody = () => {
         }
 
         try {
-            const data = await getProductData(productId);
+            // Use smart lookup that handles formatted IDs (A1, B2, #3, etc.)
+            const data = await getProductDataSmart(productId);
             setProductDetail(data);
             setIsVerified(true);
-            setStatus("✅ Product Found");
+            setStatus(`✅ Product Found (${data.formattedId})`);
 
-            // Fetch the stored handover key from backend
-            // Assuming we always want to fetch the key when product data is loaded
-            await fetchHandoverKey(productId);
+            // Set the formatted ID for display
+            setFormattedProductId(data.formattedId);
+
+            // Fetch the stored handover key from backend using the numeric ID
+            await fetchHandoverKey(data.id);
         } catch (e) {
-            setStatus(`❌ Product #${productId} not found. Make sure it's created and the contract is connected.`);
+            // Try to get formatted ID for error message too (if it's a valid format)
+            try {
+                const formatted = await getFormattedProductId(productId);
+                setStatus(`❌ Product ${formatted} not found. Make sure it's created and the contract is connected.`);
+            } catch {
+                setStatus(`❌ Product ${productId} not found or invalid format. Use formats like: #1, #2 (single products), A1, A2, B1 (bulk products).`);
+            }
             toast.error(`Lookup Error: ${e.message}`);
         } finally {
             setLoading(false);
@@ -250,7 +301,7 @@ const ManageCustody = () => {
                 body: JSON.stringify({
                     recipientEmail,
                     batchId: bulkBatchId,
-                    handoverKey: bulkNextKey
+                    handoverKey: bulkDispatchKey
                 })
             });
             const data = await response.json();
@@ -332,27 +383,35 @@ const ManageCustody = () => {
             return;
         }
         setBulkLoading(true);
-        setBulkStatus("⛓️ Verifying keys & transferring custody for batch...");
+        setBulkStatus("⛓️ Submitting N-1 verification to blockchain...");
         setBulkResult(null);
+        setBulkTransferSuccess(false);
+
+        // Generate the new dispatch key NOW (at the moment of transfer, not on page load)
+        // This key is only stored if the blockchain N-1 check succeeds
+        const newDispatchKey = Math.random().toString(36).slice(-8).toUpperCase();
 
         try {
-            await transferBatchCustody(bulkBatchId, bulkHandoverKey, bulkNextKey, bulkLocation);
+            const numericId = bulkBatchNumericId || bulkBatchId;
+            // transferBatchCustody verifies hash(bulkHandoverKey) == storedHash on-chain (N-1 check)
+            await transferBatchCustody(numericId, bulkHandoverKey, newDispatchKey, bulkLocation);
 
-            // Save new handover key for the batch in the backend
+            // ✅ Blockchain N-1 check passed — now persist the new dispatch key for the next transfer
             try {
-                await fetch(`http://localhost:5000/api/products/batch/${bulkBatchId}/handover-key`, {
+                await fetch(`http://localhost:5000/api/products/batch/${numericId}/handover-key`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ handoverKey: bulkNextKey })
+                    body: JSON.stringify({ handoverKey: newDispatchKey })
                 });
             } catch (err) {
-                console.error(`Failed to save key for Batch #${bulkBatchId}:`, err);
+                console.error(`Failed to save new dispatch key for Batch #${bulkBatchId}:`, err);
             }
 
-            setBulkStatus(`✅ Batch #${bulkBatchId} transferred successfully!`);
+            // Update dispatch key state — the Dispatch tab can now show the new QR
+            setBulkDispatchKey(newDispatchKey);
+            setBulkStatus(`✅ N-1 Verified & Batch #${bulkBatchId} transferred! Your dispatch QR for the next entity is ready.`);
             setBulkResult({ batchId: bulkBatchId, txHash: 'confirmed' });
-            // Generate new next key
-            setBulkNextKey(Math.random().toString(36).slice(-8).toUpperCase());
+            setBulkTransferSuccess(true);
             setBulkHandoverKey("");
             setBulkLocation("");
         } catch (e) {
@@ -412,21 +471,21 @@ const ManageCustody = () => {
                     console.log("Parsed Bulk Waybill Data:", waybillData);
 
                     // Validate required fields for bulk
-                    if (!waybillData.isBulk || !waybillData.batchId || !waybillData.handoverKey || !waybillData.senderAddress) {
+                    // Accept both legacy {isBulk: true} format and new {type: "BATCH_WAYBILL"} format
+                    const isBulkWaybill = waybillData.isBulk === true || waybillData.type === "BATCH_WAYBILL";
+                    if (!isBulkWaybill || !waybillData.batchId || !waybillData.handoverKey || !waybillData.senderAddress) {
                         throw new Error("Invalid bulk waybill format");
                     }
 
                     setBulkScannedWaybill(waybillData);
                     setBulkBatchId(waybillData.batchId);
-                    setBulkHandoverKey(waybillData.handoverKey);
-
-                    // We now blindly trust the blockchain transaction validation for true integrity
-                    // Frontend sender validation logic is omitted or modified for Batches natively.
+                    // Security: handover key is NOT auto-filled from QR.
+                    // Receiver must enter it manually (received out-of-band via email/phone).
 
                     setBulkWaybillValid(true);
 
-                    toast.success(`✅ Bulk Waybill verified! Loaded Batch #${waybillData.batchId}. Enter location and transfer.`);
-                    setBulkStatus("🛡️ Batch Loaded - Key Auto-Filled. Enter Location & Transfer.");
+                    toast.success(`✅ Waybill scanned! Batch #${waybillData.batchId} loaded. Enter the handover key you received separately.`);
+                    setBulkStatus("🛡️ Batch Identified — Enter your handover key to proceed.");
                 } catch (parseError) {
                     console.error("Parse error:", parseError);
                     toast.error("Invalid bulk waybill data format");
@@ -506,9 +565,8 @@ const ManageCustody = () => {
                     }
 
                     setScannedWaybill(waybillData);
-                    // Auto-fill incomingKey from QR to prevent manual typing errors
-                    setIncomingKey(waybillData.handoverKey);
-                    // Fetch product data and validate sender
+                    // Security: handover key is NOT auto-filled from QR.
+                    // Receiver must type it manually (received out-of-band).
                     const productData = await getProductData(waybillData.productId);
                     const senderMatches = productData.currentOwner.toLowerCase() === waybillData.senderAddress.toLowerCase();
 
@@ -517,8 +575,8 @@ const ManageCustody = () => {
                     setProductDetail(productData);
 
                     if (senderMatches) {
-                        toast.success("✅ Waybill verified! Handover key auto-filled. Enter location and transfer.");
-                        setStatus("🛡️ Product Loaded - Key Auto-Filled. Enter Location & Transfer.");
+                        toast.success("✅ Waybill verified! Product loaded. Enter your handover key (received separately) to accept custody.");
+                        setStatus("🛡️ Product Identified — Enter handover key received privately to transfer.");
                     } else {
                         toast.warn("⚠️ Warning: Sender address does not match current owner!");
                         setStatus("⚠️ Sender Mismatch - Verify before accepting");
@@ -615,14 +673,11 @@ const ManageCustody = () => {
                                             <div style={{ flex: 1 }}>
                                                 <label style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)', display: 'block', marginBottom: '0.3rem' }}>Batch ID</label>
                                                 <input
-                                                    type="number"
+                                                    type="text"
                                                     className="input-modern"
-                                                    min="1"
+                                                    placeholder="e.g. 1, A, B"
                                                     value={bulkBatchId}
-                                                    onChange={(e) => {
-                                                        const val = e.target.value;
-                                                        setBulkBatchId(val === "" ? "" : Math.max(1, parseInt(val) || 1));
-                                                    }}
+                                                    onChange={(e) => setBulkBatchId(e.target.value)}
                                                     disabled={bulkLoading}
                                                 />
                                             </div>
@@ -632,13 +687,13 @@ const ManageCustody = () => {
                                     <h4 style={{ color: 'var(--text-secondary)', marginBottom: '1rem' }}>Step 2: Generate Digital Waybill</h4>
                                     <div className="digital-waybill" style={{ marginTop: 0 }}>
                                         <div className="qr-frame">
-                                            {bulkNextKey ? (
+                                            {bulkDispatchKey ? (
                                                 <QRCodeSVG
                                                     id="bulk-waybill-qr"
                                                     value={JSON.stringify({
                                                         isBulk: true,
-                                                        batchId: parseInt(bulkBatchId),
-                                                        handoverKey: bulkNextKey,
+                                                        batchId: bulkBatchNumericId || parseInt(bulkBatchId),
+                                                        handoverKey: bulkDispatchKey,
                                                         senderAddress: account,
                                                         timestamp: Date.now()
                                                     })}
@@ -647,8 +702,8 @@ const ManageCustody = () => {
                                                     includeMargin={false}
                                                 />
                                             ) : (
-                                                <div style={{ width: 220, height: 220, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#D4AF37', fontSize: '0.85rem', textAlign: 'center', border: '1px dashed rgba(212,175,55,0.3)', borderRadius: 8 }}>
-                                                    Generating key...
+                                                <div style={{ width: 220, height: 220, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(212,175,55,0.7)', fontSize: '0.8rem', textAlign: 'center', padding: '1rem', border: '1px dashed rgba(212,175,55,0.3)', borderRadius: 8 }}>
+                                                    🔐 No dispatch key.<br />First accept custody of this batch via the Receive tab.
                                                 </div>
                                             )}
                                         </div>
@@ -662,7 +717,7 @@ const ManageCustody = () => {
                                             {bulkBatchDetails ? (
                                                 <div className="meta-row" style={{ marginTop: '0.2rem', color: 'var(--text-tertiary)' }}>
                                                     <span>Size/Quantity:</span>
-                                                    <span>📦 {bulkBatchDetails.productIds?.length || 0} items</span>
+                                                    <span>📦 {bulkBatchDetails.quantity || bulkBatchDetails.products?.length || bulkBatchDetails.productIds?.length || 0} items</span>
                                                 </div>
                                             ) : (
                                                 <div className="meta-row" style={{ marginTop: '0.2rem', color: 'rgba(255,100,100,0.8)' }}>
@@ -673,7 +728,7 @@ const ManageCustody = () => {
 
                                             <div className="meta-row" style={{ marginTop: '0.5rem', paddingTop: '0.5rem', borderTop: '1px dashed rgba(212,175,55,0.2)' }}>
                                                 <span>Handover Key</span>
-                                                <span className="key-highlight">{bulkNextKey}</span>
+                                                <span className="key-highlight">{bulkDispatchKey || '—'}</span>
                                             </div>
                                         </div>
 
@@ -690,7 +745,7 @@ const ManageCustody = () => {
                                             <button
                                                 className="btn btn-secondary"
                                                 onClick={sendBulkHandoverKeyViaEmail}
-                                                disabled={emailSending || !recipientEmail || !bulkBatchDetails}
+                                                disabled={emailSending || !recipientEmail || !bulkBatchDetails || !bulkDispatchKey}
                                                 style={{ width: '100%', height: '48px', marginBottom: '0.75rem', background: 'linear-gradient(135deg, #1a472a, #2d6a4f)', border: '1px solid #52b788', color: '#d8f3dc' }}
                                             >
                                                 {emailSending ? '📧 Sending Key Array...' : '📧 Send Secure Key via Email'}
@@ -700,7 +755,7 @@ const ManageCustody = () => {
                                         <button
                                             className="btn btn-primary btn-download-premium"
                                             onClick={downloadBulkWaybill}
-                                            disabled={bulkLoading || !bulkBatchDetails}
+                                            disabled={bulkLoading || !bulkBatchDetails || !bulkDispatchKey}
                                         >
                                             <Download size={20} /> Download Bulk Waybill
                                         </button>
@@ -753,7 +808,7 @@ const ManageCustody = () => {
                                                     <div className="cert-row timestamp-row">
                                                         <span>Generated:</span>
                                                         <span className="cert-value">
-                                                            {new Date(bulkScannedWaybill.timestamp).toLocaleString()}
+                                                            {new Date(bulkScannedWaybill.timestamp || bulkScannedWaybill.issuedAt).toLocaleString()}
                                                         </span>
                                                     </div>
                                                 </div>
@@ -763,23 +818,13 @@ const ManageCustody = () => {
 
                                             <div className="custody-input-stack" style={{ gap: '1rem' }}>
                                                 <div>
-                                                    <label style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)', display: 'block', marginBottom: '0.3rem' }}>Shared Handover Key (Auto-filled)</label>
+                                                    <label style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)', display: 'block', marginBottom: '0.3rem' }}>Handover Key <span style={{ color: 'rgba(239,68,68,0.8)', fontSize: '0.75rem' }}>(enter key received out-of-band)</span></label>
                                                     <input
                                                         type="text"
                                                         className="input-modern"
+                                                        placeholder="Enter the secret key you received separately"
                                                         value={bulkHandoverKey}
-                                                        readOnly
-                                                        style={{ background: 'rgba(255,255,255,0.02)', color: 'var(--text-secondary)' }}
-                                                    />
-                                                </div>
-                                                <div>
-                                                    <label style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)', display: 'block', marginBottom: '0.3rem' }}>Next Handover Key (Auto-generated)</label>
-                                                    <input
-                                                        type="text"
-                                                        className="input-modern key-input"
-                                                        value={bulkNextKey}
-                                                        readOnly
-                                                        style={{ background: 'rgba(212,175,55,0.08)', border: '1px solid rgba(212,175,55,0.3)' }}
+                                                        onChange={(e) => setBulkHandoverKey(e.target.value)}
                                                     />
                                                 </div>
                                                 <div>
@@ -821,6 +866,24 @@ const ManageCustody = () => {
                                                     <ShieldCheck size={20} /> Integrity Verified
                                                 </div>
                                             )}
+
+                                            {bulkTransferSuccess && bulkDispatchKey && (
+                                                <div style={{ marginTop: '1.5rem', padding: '1.5rem', borderRadius: '12px', background: 'rgba(52,211,153,0.06)', border: '1px solid rgba(52,211,153,0.2)' }}>
+                                                    <h4 style={{ color: '#34d399', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                        <ShieldCheck size={20} /> N-1 Verified — Dispatch Key Generated
+                                                    </h4>
+                                                    <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '1rem' }}>
+                                                        Blockchain transfer confirmed. A new dispatch key was generated from this verified N-1 transfer. Switch to <strong>Dispatch Batch</strong> to send the waybill QR to the next entity.
+                                                    </p>
+                                                    <button
+                                                        className="btn btn-primary"
+                                                        style={{ padding: '0.6rem 1.5rem' }}
+                                                        onClick={() => { setBulkAction('dispatch'); setBulkTransferSuccess(false); }}
+                                                    >
+                                                        📤 View Dispatch QR for Next Entity
+                                                    </button>
+                                                </div>
+                                            )}
                                         </div>
                                     )}
                                 </div>
@@ -839,12 +902,16 @@ const ManageCustody = () => {
 
                             {bulkResult && (
                                 <div style={{ marginTop: '1rem', padding: '1rem', borderRadius: '12px', background: 'rgba(52,211,153,0.06)', border: '1px solid rgba(52,211,153,0.15)' }}>
-                                    <p style={{ fontSize: '0.85rem', color: '#34d399', fontWeight: 600, marginBottom: '0.5rem' }}>Transferred Product IDs:</p>
-                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-                                        {bulkResult.ids.map(id => (
-                                            <span key={id} style={{ padding: '0.25rem 0.7rem', borderRadius: '8px', background: 'rgba(52,211,153,0.1)', color: '#34d399', fontSize: '0.85rem', fontWeight: 600 }}>#{id}</span>
-                                        ))}
-                                    </div>
+                                    <p style={{ fontSize: '0.85rem', color: '#34d399', fontWeight: 600, marginBottom: '0.5rem' }}>
+                                        ✅ Batch #{bulkResult.batchId} transfer confirmed on blockchain.
+                                    </p>
+                                    {bulkResult.ids?.length > 0 && (
+                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '0.5rem' }}>
+                                            {bulkResult.ids.map(id => (
+                                                <span key={id} style={{ padding: '0.25rem 0.7rem', borderRadius: '8px', background: 'rgba(52,211,153,0.1)', color: '#34d399', fontSize: '0.85rem', fontWeight: 600 }}>#{id}</span>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
                             )}
                         </div>
@@ -883,9 +950,9 @@ const ManageCustody = () => {
                                     <span className="lookup-label">Authorized Lookup</span>
                                     <div className="search-group">
                                         <input
-                                            type="number"
+                                            type="text"
                                             className="input-modern"
-                                            placeholder="Asset ID Reference"
+                                            placeholder="Asset ID (e.g. #1, A, A1)"
                                             value={productId}
                                             onChange={(e) => setProductId(e.target.value)}
                                         />

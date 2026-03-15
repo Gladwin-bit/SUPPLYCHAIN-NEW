@@ -1,117 +1,102 @@
-/* src/components/NextStepBanner.css */
+/* ═══════════════════════════════════════════════════════
+   NextStepBanner.css — Dark Sleek Banner
+   ═══════════════════════════════════════════════════════ */
 
 .next-step-banner {
-    display: flex;
-    align-items: center;
-    gap: 0.9rem;
-    padding: 0.7rem 1.25rem 0.7rem 1rem;
-    background: linear-gradient(90deg,
-            rgba(212, 175, 55, 0.08) 0%,
-            rgba(212, 175, 55, 0.04) 100%);
-    border-bottom: 1px solid rgba(212, 175, 55, 0.2);
-    position: relative;
-    z-index: 90;
-    min-height: 52px;
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 0.65rem 1.25rem 0.65rem 1rem;
+  background: linear-gradient(90deg,
+    rgba(212, 175, 55, 0.06) 0%,
+    rgba(10, 10, 15, 0) 100%);
+  border-bottom: 1px solid rgba(212, 175, 55, 0.12);
+  position: relative;
+  z-index: 90;
+  min-height: 44px;
+  backdrop-filter: blur(8px);
 }
 
-/* Left accent bar */
 .nsb-indicator {
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 3px;
-    background: linear-gradient(180deg, #d4af37, #b8860b);
-    border-radius: 0 2px 2px 0;
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: linear-gradient(180deg, #d4af37, #8b6914);
+  border-radius: 0 2px 2px 0;
+  animation: pulse-glow 2.5s ease-in-out infinite;
 }
 
-.nsb-icon {
-    font-size: 1.25rem;
-    flex-shrink: 0;
-    line-height: 1;
-}
+.nsb-icon     { font-size: 1.15rem; flex-shrink: 0; line-height: 1; }
 
 .nsb-body {
-    display: flex;
-    align-items: center;
-    gap: 0.6rem;
-    flex: 1;
-    min-width: 0;
-    flex-wrap: wrap;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex: 1;
+  min-width: 0;
+  flex-wrap: wrap;
 }
 
 .nsb-label {
-    font-size: 0.65rem;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: var(--accent-gold, #d4af37);
-    background: rgba(212, 175, 55, 0.12);
-    padding: 0.15rem 0.55rem;
-    border-radius: 100px;
-    white-space: nowrap;
-    flex-shrink: 0;
+  font-size: 0.6rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--accent-gold);
+  background: rgba(212, 175, 55, 0.1);
+  padding: 0.15rem 0.55rem;
+  border-radius: 100px;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .nsb-message {
-    font-size: 0.875rem;
-    color: var(--text-secondary, #a0a0a0);
-    line-height: 1.4;
-    min-width: 0;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+  min-width: 0;
 }
 
 .nsb-cta {
-    flex-shrink: 0;
-    padding: 0.4rem 1rem;
-    background: rgba(212, 175, 55, 0.15);
-    border: 1px solid rgba(212, 175, 55, 0.35);
-    color: var(--accent-gold, #d4af37);
-    border-radius: 100px;
-    font-size: 0.8rem;
-    font-weight: 700;
-    cursor: pointer;
-    transition: background 0.2s ease, transform 0.15s ease;
-    white-space: nowrap;
+  flex-shrink: 0;
+  padding: 0.35rem 0.9rem;
+  background: rgba(212, 175, 55, 0.12);
+  border: 1px solid rgba(212, 175, 55, 0.28);
+  color: var(--accent-gold);
+  border-radius: 100px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+  white-space: nowrap;
 }
-
 .nsb-cta:hover {
-    background: rgba(212, 175, 55, 0.25);
-    transform: translateX(2px);
+  background: rgba(212, 175, 55, 0.22);
+  border-color: rgba(212, 175, 55, 0.45);
+  transform: translateX(2px);
 }
 
 .nsb-dismiss {
-    flex-shrink: 0;
-    background: none;
-    border: none;
-    color: var(--text-tertiary, #666);
-    font-size: 0.8rem;
-    cursor: pointer;
-    padding: 0.3rem 0.4rem;
-    border-radius: 4px;
-    line-height: 1;
-    transition: color 0.15s ease, background 0.15s ease;
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  cursor: pointer;
+  padding: 0.3rem 0.4rem;
+  border-radius: 4px;
+  line-height: 1;
+  transition: var(--transition-smooth);
 }
-
 .nsb-dismiss:hover {
-    color: var(--text-secondary, #999);
-    background: rgba(255, 255, 255, 0.06);
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.06);
 }
 
 @media (max-width: 600px) {
-    .next-step-banner {
-        flex-wrap: wrap;
-        gap: 0.6rem;
-        padding: 0.7rem 1rem;
-    }
-
-    .nsb-body {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 0.3rem;
-    }
-
-    .nsb-cta {
-        width: 100%;
-        text-align: center;
-    }
+  .next-step-banner { flex-wrap: wrap; gap: 0.6rem; padding: 0.65rem 1rem; }
+  .nsb-body         { flex-direction: column; align-items: flex-start; gap: 0.3rem; }
+  .nsb-cta          { width: 100%; text-align: center; }
 }
