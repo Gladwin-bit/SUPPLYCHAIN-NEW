@@ -32,8 +32,8 @@ export const register = async (req, res) => {
             });
         }
 
-        // Wallet address is required
-        if (!walletAddress) {
+        // Wallet address is optional for customers
+        if (!walletAddress && role !== 'customer') {
             return res.status(400).json({
                 success: false,
                 message: 'Wallet address is required. Please connect your MetaMask wallet.'
@@ -49,15 +49,17 @@ export const register = async (req, res) => {
             });
         }
 
-        // Check if wallet address already registered
-        const existingWallet = await User.findOne({
-            walletAddress: { $regex: new RegExp(`^${walletAddress}$`, 'i') }
-        });
-        if (existingWallet) {
-            return res.status(400).json({
-                success: false,
-                message: 'This wallet address is already registered'
+        // Check if wallet address already registered (only if provided)
+        if (walletAddress) {
+            const existingWallet = await User.findOne({
+                walletAddress: { $regex: new RegExp(`^${walletAddress}$`, 'i') }
             });
+            if (existingWallet) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'This wallet address is already registered'
+                });
+            }
         }
 
         // Validate role
@@ -77,8 +79,8 @@ export const register = async (req, res) => {
             });
         }
 
-        // ID proof is required for all users
-        if (!req.files?.idProof) {
+        // ID proof is required only for non-customer roles
+        if (role !== 'customer' && !req.files?.idProof) {
             return res.status(400).json({
                 success: false,
                 message: 'ID proof is required'
@@ -91,13 +93,17 @@ export const register = async (req, res) => {
             password,
             name,
             role,
-            walletAddress: walletAddress.toLowerCase(), // Save wallet address
-            idProof: {
+            walletAddress: walletAddress ? walletAddress.toLowerCase() : `customer_${Date.now()}`,
+        };
+
+        // Add idProof only if provided
+        if (req.files?.idProof) {
+            userData.idProof = {
                 filename: req.files.idProof[0].filename,
                 path: req.files.idProof[0].path,
                 uploadedAt: new Date()
-            }
-        };
+            };
+        }
 
         // Handle certificate upload to IPFS and blockchain
         let ipfsHash = null;
