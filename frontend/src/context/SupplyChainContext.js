@@ -42,7 +42,7 @@ export const SupplyChainProvider = ({ children }) => {
                 if (window.ethereum) {
                     provider = new ethers.BrowserProvider(window.ethereum);
                 } else {
-                    provider = new ethers.JsonRpcProvider("http://127.0.0.1:8545");
+                    provider = new ethers.JsonRpcProvider(process.env.REACT_APP_RPC_URL || "https://ethereum-sepolia-rpc.publicnode.com");
                 }
                 const sc = new ethers.Contract(contractAddress, abi, provider);
                 setReadOnlyContract(sc);
@@ -95,6 +95,23 @@ export const SupplyChainProvider = ({ children }) => {
                 window.ethereum.removeListener("accountsChanged", handleAccounts);
             };
         }
+    }, [updateConnection]);
+
+    // Auto-reconnect on page refresh if MetaMask was previously connected
+    useEffect(() => {
+        const autoReconnect = async () => {
+            if (!window.ethereum) return;
+            try {
+                const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+                if (accounts.length > 0) {
+                    const provider = new ethers.BrowserProvider(window.ethereum, "any");
+                    const signer = await provider.getSigner();
+                    const addr = await signer.getAddress();
+                    updateConnection(addr, signer);
+                }
+            } catch { /* silent fail — user can manually connect */ }
+        };
+        autoReconnect();
     }, [updateConnection]);
 
     const createProduct = async (name, loomLocation, weaveDate, consumerSecretHash, handoverKeyHash, productCertificate = "") => {

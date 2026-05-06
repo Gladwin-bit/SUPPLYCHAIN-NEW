@@ -31,11 +31,25 @@ async function main() {
   fs.writeFileSync(addressPath, JSON.stringify({ address }, null, 2));
   console.log("Address saved to:", addressPath);
 
+  // Save to customer-app
+  const customerAddressPath = path.join(process.cwd(), "customer-app", "src", "contract-address.json");
+  if (fs.existsSync(path.dirname(customerAddressPath))) {
+    fs.writeFileSync(customerAddressPath, JSON.stringify({ address }, null, 2));
+    console.log("Address saved to customer-app:", customerAddressPath);
+  }
+
   // Also copy the ABI so the frontend always matches the deployed contract
   const artifactPath = path.join(process.cwd(), "artifacts", "contracts", "SupplyChain.sol", "SupplyChain.json");
   const abiDestPath = path.join(process.cwd(), "frontend", "src", "SupplyChain.json");
   fs.copyFileSync(artifactPath, abiDestPath);
-  console.log("ABI copied to:", abiDestPath);
+  console.log("ABI copied to frontend:", abiDestPath);
+
+  // Copy ABI to customer-app
+  const customerAbiDestPath = path.join(process.cwd(), "customer-app", "src", "SupplyChain.json");
+  if (fs.existsSync(path.dirname(customerAbiDestPath))) {
+    fs.copyFileSync(artifactPath, customerAbiDestPath);
+    console.log("ABI copied to customer-app:", customerAbiDestPath);
+  }
 }
 
 main().catch((err) => {
