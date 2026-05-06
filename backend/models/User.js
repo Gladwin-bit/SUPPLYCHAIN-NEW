@@ -55,6 +55,7 @@ const userSchema = new mongoose.Schema({
         validate: {
             validator: function (v) {
                 if (!v) return true; // Allow null/empty
+                if (v.startsWith('customer_')) return true; // Allow generated customer addresses
                 return /^0x[a-fA-F0-9]{40}$/.test(v);
             },
             message: 'Invalid Ethereum wallet address'
