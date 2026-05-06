@@ -2,47 +2,49 @@ import { Resend } from 'resend';
 import nodemailer from 'nodemailer';
 
 /**
- * Send email using Resend API (preferred - uses HTTPS, works on Railway)
- * or fall back to nodemailer if RESEND_API_KEY is not set
+ * Send email using Brevo (Sendinblue) HTTP API
+ * Works on Railway (bypasses SMTP blocks) and allows sending to anyone from a verified Gmail.
  */
 const sendEmail = async ({ to, subject, html, text }) => {
-  if (process.env.RESEND_API_KEY) {
-    // ✅ Resend API (HTTP - never blocked by cloud firewalls)
-    const resend = new Resend(process.env.RESEND_API_KEY);
-    const fromAddress = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev';
-
-    const { data, error } = await resend.emails.send({
-      from: `Kasaragod Sarees <${fromAddress}>`,
-      to: [to],
-      subject,
-      html,
-      text
-    });
-
-    if (error) {
-      console.error('❌ Resend API error:', error);
-      throw new Error(`Resend failed: ${error.message}`);
-    }
-
-    console.log('✅ Email sent via Resend:', data?.id);
-    return data;
-
-  } else {
-    // Fallback: nodemailer (may be blocked on Railway)
-    console.warn('⚠️ RESEND_API_KEY not set, falling back to nodemailer SMTP');
-    const transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
-      tls: { rejectUnauthorized: false }
-    });
-
-    const info = await transporter.sendMail({
-      from: `"Kasaragod Sarees" <${process.env.EMAIL_USER}>`,
-      to, subject, html, text
-    });
-    console.log('✅ Email sent via nodemailer:', info.messageId);
-    return info;
+  const apiKey = process.env.BREVO_API_KEY;
+  const senderEmail = process.env.EMAIL_USER || 'blockchainproject2025@gmail.com';
+  
+  if (!apiKey) {
+    throw new Error('BREVO_API_KEY is not configured in environment variables. Please add it to Railway.');
   }
+
+  const payload = {
+    sender: {
+      name: "Kasaragod Sarees",
+      email: senderEmail
+    },
+    to: [
+      { email: to }
+    ],
+    subject: subject,
+    htmlContent: html,
+    textContent: text
+  };
+
+  const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+    method: 'POST',
+    headers: {
+      'accept': 'application/json',
+      'api-key': apiKey,
+      'content-type': 'application/json'
+    },
+    body: JSON.stringify(payload)
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    console.error('❌ Brevo API error:', errorData);
+    throw new Error(`Brevo API failed: ${errorData.message || response.statusText}`);
+  }
+
+  const data = await response.json();
+  console.log('✅ Email sent via Brevo API:', data.messageId);
+  return data;
 };
 
 /**
