@@ -21,7 +21,7 @@ const CertificateViewer = ({ productHistory, productId, onClose }) => {
             setError(null);
 
             // Hardcoded URL - no environment variable
-            const url = `http://localhost:5000/api/certificates/${productId}`;
+            const url = `${(process.env.REACT_APP_API_URL || 'http://localhost:5000/api')}/certificates/${productId}`;
             console.log('=== FETCHING CERTIFICATES ===');
             console.log('URL:', url);
 
@@ -64,7 +64,7 @@ const CertificateViewer = ({ productHistory, productId, onClose }) => {
 
     const handleDownload = (url, filename) => {
         const link = document.createElement('a');
-        link.href = `http://localhost:5000${url}`;
+        link.href = `${(process.env.REACT_APP_API_URL || 'http://localhost:5000/api').replace('/api', '')}${url}`;
         link.download = filename;
         link.target = '_blank';
         document.body.appendChild(link);

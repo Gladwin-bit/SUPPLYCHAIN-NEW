@@ -78,7 +78,7 @@ const UploadQR = () => {
                                 // Retrieve batch history if part of a batch
                                 if (scannedBatchId) {
                                     try {
-                                        const batchRes = await fetch(`http://localhost:5000/api/batch/${encodeURIComponent(scannedBatchId)}/analytics`);
+                                        const batchRes = await fetch(`${(process.env.REACT_APP_API_URL || 'http://localhost:5000/api')}/batch/${encodeURIComponent(scannedBatchId)}/analytics`);
                                         if (batchRes.ok) {
                                             const batchData = await batchRes.json();
                                             if (batchData.success && batchData.analytics?.handoverHistory?.length) {

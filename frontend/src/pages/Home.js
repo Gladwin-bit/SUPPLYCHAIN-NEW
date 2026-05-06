@@ -40,7 +40,7 @@ const Home = () => {
             let dbProducts = [];
             let dbBatches = [];
             try {
-                const dbRes = await fetch(`http://localhost:5000/api/products/by-manufacturer/${account}`);
+                const dbRes = await fetch(`${(process.env.REACT_APP_API_URL || 'http://localhost:5000/api')}/products/by-manufacturer/${account}`);
                 const dbData = await dbRes.json();
                 if (dbData.success) {
                     dbProducts = dbData.products;
@@ -90,7 +90,7 @@ const Home = () => {
                                 // Fetch DB metadata (names, location, weave date)
                                 let batchMeta = null;
                                 try {
-                                    const metaRes = await fetch(`http://localhost:5000/api/products/batch/${batchId}`);
+                                    const metaRes = await fetch(`${(process.env.REACT_APP_API_URL || 'http://localhost:5000/api')}/products/batch/${batchId}`);
                                     const metaData = await metaRes.json();
                                     if (metaData.success) batchMeta = metaData.batch;
                                 } catch { /* use chain-only data */ }

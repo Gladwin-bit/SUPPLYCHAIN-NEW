@@ -73,7 +73,7 @@ const VerifyProduct = () => {
                         if (waybillData.type === "BATCH_WAYBILL") {
                             const batchId = waybillData.batchId;
                             try {
-                                const batchRes = await fetch(`http://localhost:5000/api/batch/${encodeURIComponent(batchId)}`);
+                                const batchRes = await fetch(`${(process.env.REACT_APP_API_URL || 'http://localhost:5000/api')}/batch/${encodeURIComponent(batchId)}`);
                                 if (batchRes.ok) {
                                     const batchJson = await batchRes.json();
                                     if (batchJson.success && batchJson.batch) {
@@ -328,7 +328,7 @@ const VerifyProduct = () => {
                             // ----------------------------------------------------
                             if (scannedBatchId) {
                                 try {
-                                    const batchRes = await fetch(`http://localhost:5000/api/batch/${encodeURIComponent(scannedBatchId)}/analytics`);
+                                    const batchRes = await fetch(`${(process.env.REACT_APP_API_URL || 'http://localhost:5000/api')}/batch/${encodeURIComponent(scannedBatchId)}/analytics`);
                                     if (batchRes.ok) {
                                         const batchData = await batchRes.json();
                                         if (batchData.success && batchData.analytics?.handoverHistory?.length) {
@@ -1002,7 +1002,7 @@ const VerifyProduct = () => {
                                                                     }
                                                                     setReportSubmitting(true);
                                                                     try {
-                                                                        const res = await fetch('http://localhost:5000/api/reports', {
+                                                                        const res = await fetch(`${(process.env.REACT_APP_API_URL || 'http://localhost:5000/api')}/reports`, {
                                                                             method: 'POST',
                                                                             headers: { 'Content-Type': 'application/json' },
                                                                             body: JSON.stringify({

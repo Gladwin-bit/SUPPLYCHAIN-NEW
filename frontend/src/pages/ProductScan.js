@@ -79,7 +79,7 @@ export default function ProductScan() {
                 // Retrieve batch history if part of a batch
                 try {
                     if (batchIdParam) {
-                        const batchRes = await fetch(`http://localhost:5000/api/batch/${encodeURIComponent(batchIdParam)}/analytics`);
+                        const batchRes = await fetch(`${(process.env.REACT_APP_API_URL || 'http://localhost:5000/api')}/batch/${encodeURIComponent(batchIdParam)}/analytics`);
                         if (batchRes.ok) {
                             const batchData = await batchRes.json();
                             if (batchData.success && batchData.analytics?.handoverHistory?.length) {

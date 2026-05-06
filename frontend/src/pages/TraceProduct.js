@@ -99,7 +99,7 @@ const TraceProduct = () => {
                             // Merge batch history if a batchId was found
                             if (scannedBatchId) {
                                 try {
-                                    const batchRes = await fetch(`http://localhost:5000/api/batch/${encodeURIComponent(scannedBatchId)}/analytics`);
+                                    const batchRes = await fetch(`${(process.env.REACT_APP_API_URL || 'http://localhost:5000/api')}/batch/${encodeURIComponent(scannedBatchId)}/analytics`);
                                     if (batchRes.ok) {
                                         const batchData = await batchRes.json();
                                         if (batchData.success && batchData.analytics?.handoverHistory?.length) {
@@ -128,7 +128,7 @@ const TraceProduct = () => {
                             // Fetch DB metadata (txHash, certificate, manufacturer info)
                             try {
                                 const numericId = productData.id;
-                                const dbRes = await fetch(`http://localhost:5000/api/products/${numericId}`);
+                                const dbRes = await fetch(`${(process.env.REACT_APP_API_URL || 'http://localhost:5000/api')}/products/${numericId}`);
                                 const dbJson = await dbRes.json();
                                 if (dbJson.success) setDbProduct(dbJson.product);
                             } catch (_) {

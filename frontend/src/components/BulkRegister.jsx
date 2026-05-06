@@ -134,7 +134,7 @@ export default function BulkRegister() {
             log("Uploading batch certificate…");
             const fd = new FormData();
             fd.append("certificate", certFile);
-            const upRes  = await fetch("http://localhost:5000/api/products/upload-certificate", { method: "POST", body: fd });
+            const upRes  = await fetch(`${(process.env.REACT_APP_API_URL || 'http://localhost:5000/api')}/products/upload-certificate`, { method: "POST", body: fd });
             const upData = await upRes.json();
             if (!upRes.ok || !upData.success) throw new Error(upData.message || "Certificate upload failed");
             log(`Certificate saved: ${upData.filename}`, "ok");
@@ -198,7 +198,7 @@ export default function BulkRegister() {
                     consumerSecretHash: secretHashes[idx]
                 }));
 
-                const dbRes = await fetch("http://localhost:5000/api/products/bulk-register", {
+                const dbRes = await fetch(`${(process.env.REACT_APP_API_URL || 'http://localhost:5000/api')}/products/bulk-register`, {
                     method:  "POST",
                     headers: { "Content-Type": "application/json" },
                     body:    JSON.stringify({
@@ -246,7 +246,7 @@ export default function BulkRegister() {
             if (recipientEmail) {
                 log(`Sending handover key to ${recipientEmail}…`);
                 try {
-                    await fetch("http://localhost:5000/api/email/send-batch-handover-key", {
+                    await fetch(`${(process.env.REACT_APP_API_URL || 'http://localhost:5000/api')}/email/send-batch-handover-key`, {
                         method:  "POST",
                         headers: { "Content-Type": "application/json" },
                         body:    JSON.stringify({
@@ -361,7 +361,7 @@ export default function BulkRegister() {
         try {
             // Use the new batch API endpoint to get waybill
             const batchIdToUse = registered.formatted?.batchId || registered.batchId;
-            const response = await fetch(`http://localhost:5000/api/batch/${batchIdToUse}/waybill?format=qr`);
+            const response = await fetch(`${(process.env.REACT_APP_API_URL || 'http://localhost:5000/api')}/batch/${batchIdToUse}/waybill?format=qr`);
 
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -429,7 +429,7 @@ export default function BulkRegister() {
         if (!recipientEmail) { toast.error("Enter recipient email"); return; }
         setEmailSending(true);
         try {
-            const res = await fetch("http://localhost:5000/api/email/send-batch-handover-key", {
+            const res = await fetch(`${(process.env.REACT_APP_API_URL || 'http://localhost:5000/api')}/email/send-batch-handover-key`, {
                 method:  "POST",
                 headers: { "Content-Type": "application/json" },
                 body:    JSON.stringify({

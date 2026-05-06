@@ -81,7 +81,7 @@ const ManageCustody = () => {
             }
             try {
                 // Try Backend first — /api/batch handles both numeric and formatted IDs (A, B, etc.)
-                const response = await fetch(`http://localhost:5000/api/batch/${bulkBatchId}`);
+                const response = await fetch(`${(process.env.REACT_APP_API_URL || 'http://localhost:5000/api')}/batch/${bulkBatchId}`);
                 const data = await response.json();
 
                 if (data.success && data.batch) {
@@ -130,7 +130,7 @@ const ManageCustody = () => {
         const fetchStoredDispatchKey = async () => {
             if (!bulkBatchNumericId) { setBulkDispatchKey(null); return; }
             try {
-                const res = await fetch(`http://localhost:5000/api/products/batch/${bulkBatchNumericId}/handover-key`);
+                const res = await fetch(`${(process.env.REACT_APP_API_URL || 'http://localhost:5000/api')}/products/batch/${bulkBatchNumericId}/handover-key`);
                 const data = await res.json();
                 if (data.success && data.handoverKey) {
                     setBulkDispatchKey(data.handoverKey);
@@ -217,7 +217,7 @@ const ManageCustody = () => {
     // Fetch handover key from backend
     const fetchHandoverKey = async (id) => {
         try {
-            const response = await fetch(`http://localhost:5000/api/products/${id}/handover-key`);
+            const response = await fetch(`${(process.env.REACT_APP_API_URL || 'http://localhost:5000/api')}/products/${id}/handover-key`);
             const data = await response.json();
 
             if (data.success && data.handoverKey) {
@@ -258,7 +258,7 @@ const ManageCustody = () => {
         }
         setEmailSending(true);
         try {
-            const response = await fetch('http://localhost:5000/api/email/send-handover-key', {
+            const response = await fetch(`${(process.env.REACT_APP_API_URL || 'http://localhost:5000/api')}/email/send-handover-key`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -295,7 +295,7 @@ const ManageCustody = () => {
         }
         setEmailSending(true);
         try {
-            const response = await fetch('http://localhost:5000/api/email/send-batch-handover-key', {
+            const response = await fetch(`${(process.env.REACT_APP_API_URL || 'http://localhost:5000/api')}/email/send-batch-handover-key`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -349,7 +349,7 @@ const ManageCustody = () => {
 
             // Save the new handover key to backend for next transfer
             try {
-                await fetch(`http://localhost:5000/api/products/${productId}/handover-key`, {
+                await fetch(`${(process.env.REACT_APP_API_URL || 'http://localhost:5000/api')}/products/${productId}/handover-key`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ handoverKey: nextKey })
@@ -398,7 +398,7 @@ const ManageCustody = () => {
 
             // ✅ Blockchain N-1 check passed — now persist the new dispatch key for the next transfer
             try {
-                await fetch(`http://localhost:5000/api/products/batch/${numericId}/handover-key`, {
+                await fetch(`${(process.env.REACT_APP_API_URL || 'http://localhost:5000/api')}/products/batch/${numericId}/handover-key`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ handoverKey: newDispatchKey })

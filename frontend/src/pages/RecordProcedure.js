@@ -91,7 +91,7 @@ const RecordProcedure = () => {
             setStatus("📤 Uploading certificate…");
             const formData = new FormData();
             formData.append("certificate", certificateFile);
-            const uploadRes  = await fetch("http://localhost:5000/api/products/upload-certificate", { method: "POST", body: formData });
+            const uploadRes  = await fetch(`${(process.env.REACT_APP_API_URL || 'http://localhost:5000/api')}/products/upload-certificate`, { method: "POST", body: formData });
             const uploadData = await uploadRes.json();
             if (!uploadData.success) throw new Error("Certificate upload failed");
 
@@ -115,7 +115,7 @@ const RecordProcedure = () => {
             }
 
             setStatus("💾 Saving to database…");
-            const dbRes  = await fetch("http://localhost:5000/api/products/register", {
+            const dbRes  = await fetch(`${(process.env.REACT_APP_API_URL || 'http://localhost:5000/api')}/products/register`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -131,7 +131,7 @@ const RecordProcedure = () => {
             if (!dbData.success) throw new Error(`Database save failed: ${dbData.message}`);
 
             if (threads[0].supplier || dyes[0].supplier || fabricSources[0].vendor) {
-                await fetch("http://localhost:5000/api/products/upload-materials-metadata", {
+                await fetch(`${(process.env.REACT_APP_API_URL || 'http://localhost:5000/api')}/products/upload-materials-metadata`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ productName: name, materials: { threads, dyes, fabricSources, notes: materialNotes } })
@@ -155,7 +155,7 @@ const RecordProcedure = () => {
             if (firstRecipientEmail) {
                 try {
                     setStatus("📧 Sending handover key to recipient…");
-                    const emailRes  = await fetch("http://localhost:5000/api/email/send-handover-key", {
+                    const emailRes  = await fetch(`${(process.env.REACT_APP_API_URL || 'http://localhost:5000/api')}/email/send-handover-key`, {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({ recipientEmail: firstRecipientEmail, productId, productName: name, handoverKey })
