@@ -525,26 +525,36 @@ router.post('/register', async (req, res) => {
             });
         }
 
-        // Create product record
-        const product = await Product.create({
-            productId: parseInt(productId),
-            name,
-            description: req.body.description || "",
-            manufacturer: manufacturer._id,
-            manufacturerAddress: manufacturerAddress.toLowerCase(),
-            loomLocation: loomLocation || "Not Specified",
-            weaveDate: weaveDate || new Date(),
-            consumerSecretHash,
-            currentHandoverKey: req.body.currentHandoverKey || null, // Save handover key for rolling mechanism
-            productCertificate: {
-                filename: certificateFilename,
-                path: certificatePath || `uploads/product-certificates/${certificateFilename}`,
-                uploadedAt: new Date()
-            },
-            blockchainTxHash: txHash
-        });
+        const numericId = parseInt(productId);
 
-        console.log('Product saved to database:', product.productId);
+        // Upsert: if this productId already exists (e.g. after contract redeploy resets counter),
+        // overwrite it with the new registration rather than failing with a duplicate key error.
+        const product = await Product.findOneAndUpdate(
+            { productId: numericId },
+            {
+                $set: {
+                    productId: numericId,
+                    name,
+                    description: req.body.description || "",
+                    manufacturer: manufacturer._id,
+                    manufacturerAddress: manufacturerAddress.toLowerCase(),
+                    loomLocation: loomLocation || "Not Specified",
+                    weaveDate: weaveDate || new Date(),
+                    consumerSecretHash,
+                    currentHandoverKey: req.body.currentHandoverKey || null,
+                    productCertificate: {
+                        filename: certificateFilename,
+                        path: certificatePath || `uploads/product-certificates/${certificateFilename}`,
+                        uploadedAt: new Date()
+                    },
+                    blockchainTxHash: txHash,
+                    createdAt: new Date()
+                }
+            },
+            { upsert: true, new: true, setDefaultsOnInsert: true }
+        );
+
+        console.log('Product saved to database:', product.productId, '-', product.name);
 
         res.json({
             success: true,
@@ -558,15 +568,6 @@ router.post('/register', async (req, res) => {
 
     } catch (error) {
         console.error('Product registration error:', error);
-
-        // Handle duplicate product ID
-        if (error.code === 11000) {
-            return res.status(409).json({
-                success: false,
-                message: 'Product ID already exists in database'
-            });
-        }
-
         res.status(500).json({
             success: false,
             message: 'Failed to register product',
@@ -752,10 +753,15 @@ router.get('/:productId', async (req, res) => {
                 id: product.productId,
                 name: product.name,
                 manufacturer: product.manufacturer,
+                manufacturerAddress: product.manufacturerAddress,
+                loomLocation: product.loomLocation,
+                weaveDate: product.weaveDate,
+                blockchainTxHash: product.blockchainTxHash || null,
+                materialsMetadataFilename: product.materialsMetadataFilename || null,
                 certificate: {
-                    filename: product.productCertificate.filename,
-                    url: `/uploads/product-certificates/${product.productCertificate.filename}`,
-                    uploadedAt: product.productCertificate.uploadedAt
+                    filename: product.productCertificate?.filename,
+                    url: `/uploads/product-certificates/${product.productCertificate?.filename}`,
+                    uploadedAt: product.productCertificate?.uploadedAt
                 },
                 createdAt: product.createdAt
             }

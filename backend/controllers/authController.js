@@ -22,7 +22,8 @@ const generateToken = (userId) => {
  */
 export const register = async (req, res) => {
     try {
-        const { email, password, name, role, walletAddress } = req.body;
+        let { email, password, name, role, walletAddress } = req.body;
+        if (role) role = role.trim();
 
         // Validate required fields
         if (!email || !password || !name || !role) {
@@ -36,7 +37,7 @@ export const register = async (req, res) => {
         if (!walletAddress && role !== 'customer') {
             return res.status(400).json({
                 success: false,
-                message: 'Wallet address is required. Please connect your MetaMask wallet.'
+                message: 'Wallet address is required for non-customers. Please connect your MetaMask wallet.'
             });
         }
 
