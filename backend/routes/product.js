@@ -1,51 +1,14 @@
 import express from 'express';
-import multer from 'multer';
-import path from 'path';
-import fs from 'fs';
+import { uploadCertificate } from '../config/cloudinary.js';
 
 const router = express.Router();
 
-// Configure multer for product certificate uploads
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        const uploadPath = process.env.UPLOAD_PATH || './uploads';
-        const productCertPath = path.join(uploadPath, 'product-certificates');
-
-        // Create directory if it doesn't exist
-        if (!fs.existsSync(productCertPath)) {
-            fs.mkdirSync(productCertPath, { recursive: true });
-        }
-
-        cb(null, productCertPath);
-    },
-    filename: (req, file, cb) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, 'product-cert-' + uniqueSuffix + path.extname(file.originalname));
-    }
-});
-
-const upload = multer({
-    storage: storage,
-    limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
-    fileFilter: (req, file, cb) => {
-        const allowedTypes = /pdf|png|jpg|jpeg/;
-        const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-        const mimetype = allowedTypes.test(file.mimetype);
-
-        if (extname && mimetype) {
-            cb(null, true);
-        } else {
-            cb(new Error('Only PDF and image files are allowed'));
-        }
-    }
-});
-
 /**
  * @route   POST /api/products/upload-certificate
- * @desc    Upload product certificate and return filename
+ * @desc    Upload product certificate to Cloudinary and return URL
  * @access  Private (requires authentication)
  */
-router.post('/upload-certificate', upload.single('certificate'), (req, res) => {
+router.post('/upload-certificate', uploadCertificate.single('certificate'), (req, res) => {
     try {
         if (!req.file) {
             return res.status(400).json({
@@ -54,10 +17,15 @@ router.post('/upload-certificate', upload.single('certificate'), (req, res) => {
             });
         }
 
+        // Cloudinary stores the public URL in req.file.path
+        const fileUrl = req.file.path;
+        const publicId = req.file.filename;
+
         res.json({
             success: true,
-            filename: req.file.filename,
-            path: req.file.path,
+            filename: publicId,   // Cloudinary public_id
+            path: fileUrl,        // Full Cloudinary HTTPS URL
+            url: fileUrl,
             message: 'Certificate uploaded successfully'
         });
     } catch (error) {
@@ -72,7 +40,7 @@ router.post('/upload-certificate', upload.single('certificate'), (req, res) => {
 
 /**
  * @route   POST /api/products/upload-materials-metadata
- * @desc    Upload materials metadata JSON (threads, dyes, fabric sources)
+ * @desc    Store materials metadata JSON inline (no filesystem - cloud safe)
  * @access  Private
  */
 router.post('/upload-materials-metadata', (req, res) => {
@@ -86,99 +54,50 @@ router.post('/upload-materials-metadata', (req, res) => {
             });
         }
 
-        // Create metadata directory if it doesn't exist
-        const uploadPath = process.env.UPLOAD_PATH || './uploads';
-        const metadataPath = path.join(uploadPath, 'materials-metadata');
-
-        if (!fs.existsSync(metadataPath)) {
-            fs.mkdirSync(metadataPath, { recursive: true });
-        }
-
-        // Create unique filename
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        // Store metadata inline (returned as JSON, saved by caller in MongoDB)
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
         const filename = `materials-${uniqueSuffix}.json`;
-        const filepath = path.join(metadataPath, filename);
 
-        // Prepare metadata object
         const metadata = {
             productName: productName || 'Untitled',
             uploadDate: new Date().toISOString(),
             ...materials
         };
 
-        // Write JSON file
-        fs.writeFileSync(filepath, JSON.stringify(metadata, null, 2), 'utf8');
-
         res.json({
             success: true,
-            filename: filename,
-            path: filepath,
-            message: 'Materials metadata uploaded successfully'
+            filename,
+            metadata, // caller should persist this in MongoDB
+            message: 'Materials metadata processed successfully'
         });
     } catch (error) {
-        console.error('Materials metadata upload error:', error);
+        console.error('Materials metadata error:', error);
         res.status(500).json({
             success: false,
-            message: 'Failed to upload materials metadata',
+            message: 'Failed to process materials metadata',
             error: error.message
         });
     }
 });
 
 /**
- * @route   GET /api/products/materials-metadata/:filename
- * @desc    Retrieve materials metadata file
+ * @route   GET /api/products/certificate/:publicId(*)
+ * @desc    Redirect to Cloudinary URL for the certificate
  * @access  Public
  */
-router.get('/materials-metadata/:filename', (req, res) => {
+router.get('/certificate/:publicId(*)', async (req, res) => {
     try {
-        const { filename } = req.params;
-        const uploadPath = process.env.UPLOAD_PATH || './uploads';
-        const filePath = path.join(uploadPath, 'materials-metadata', filename);
+        const { publicId } = req.params;
 
-        if (!fs.existsSync(filePath)) {
-            return res.status(404).json({
-                success: false,
-                message: 'Materials metadata file not found'
-            });
+        // If it's already a full URL, redirect directly
+        if (publicId.startsWith('http')) {
+            return res.redirect(publicId);
         }
 
-        const metadata = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-
-        res.json({
-            success: true,
-            metadata
-        });
-    } catch (error) {
-        console.error('Get materials metadata error:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Failed to retrieve materials metadata',
-            error: error.message
-        });
-    }
-});
-
-
-/**
- * @route   GET /api/products/certificate/:filename
- * @desc    Serve product certificate file
- * @access  Public
- */
-router.get('/certificate/:filename', (req, res) => {
-    try {
-        const { filename } = req.params;
-        const uploadPath = process.env.UPLOAD_PATH || './uploads';
-        const filePath = path.join(uploadPath, 'product-certificates', filename);
-
-        if (!fs.existsSync(filePath)) {
-            return res.status(404).json({
-                success: false,
-                message: 'Certificate file not found'
-            });
-        }
-
-        res.sendFile(path.resolve(filePath));
+        // Build Cloudinary URL from public_id
+        const { cloudinary } = await import('../config/cloudinary.js');
+        const url = cloudinary.url(publicId, { secure: true, resource_type: 'auto' });
+        res.redirect(url);
     } catch (error) {
         console.error('Get certificate error:', error);
         res.status(500).json({
