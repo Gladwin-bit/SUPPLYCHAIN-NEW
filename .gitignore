@@ -22,6 +22,9 @@ node_modules/
 .env.*.local
 **/.env
 **/.env.*
+# Allow frontend env (REACT_APP_* vars are public, bundled into JS)
+!frontend/.env
+!frontend/.env.production
 
 # Local Uploads
 backend/uploads/
