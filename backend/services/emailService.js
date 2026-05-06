@@ -1,15 +1,18 @@
 import nodemailer from 'nodemailer';
 
-// Create Gmail SMTP transporter
+// Create Gmail SMTP transporter (port 587 / STARTTLS — works on Railway)
 const createTransporter = () => {
   return nodemailer.createTransport({
     host: 'smtp.gmail.com',
-    port: 465,
-    secure: true,
+    port: 587,
+    secure: false,       // false = STARTTLS (port 587), true = SSL (port 465)
     auth: {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASS
-    }
+    },
+    connectionTimeout: 10000,   // 10s
+    greetingTimeout: 10000,
+    socketTimeout: 15000
   });
 };
 
