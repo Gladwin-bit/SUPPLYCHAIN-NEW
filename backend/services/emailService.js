@@ -1,18 +1,16 @@
 import nodemailer from 'nodemailer';
 
-// Create Gmail SMTP transporter (port 587 / STARTTLS — works on Railway)
+// Create Gmail SMTP transporter
 const createTransporter = () => {
   return nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 587,
-    secure: false,       // false = STARTTLS (port 587), true = SSL (port 465)
+    service: 'gmail',
     auth: {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASS
     },
-    connectionTimeout: 10000,   // 10s
-    greetingTimeout: 10000,
-    socketTimeout: 15000
+    tls: {
+      rejectUnauthorized: false  // Allow self-signed certs (needed on some cloud hosts)
+    }
   });
 };
 
@@ -127,9 +125,20 @@ This is an automated message from the Kasaragod Sarees Blockchain Supply Chain s
   };
 
   const transporter = createTransporter();
-  const info = await transporter.sendMail(mailOptions);
 
+  // Verify connection before sending
+  try {
+    await transporter.verify();
+    console.log('✅ SMTP connection verified');
+  } catch (verifyError) {
+    console.error('❌ SMTP verify failed:', verifyError.message, verifyError.code);
+    throw verifyError;
+  }
+
+  const info = await transporter.sendMail(mailOptions);
   console.log(`✅ Handover key email sent to ${recipientEmail}: ${info.messageId}`);
+  return info;
+
   return info;
 };
 
