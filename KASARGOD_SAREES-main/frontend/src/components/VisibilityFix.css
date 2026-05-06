@@ -1,0 +1,438 @@
+/* Emergency visibility fix for dark theme pages */
+/* This file adds explicit text color overrides to ensure content is visible */
+
+/* Global text visibility fixes with higher specificity */
+.trace-product-page,
+.explorer-container,
+.manage-custody,
+.blockchain-explorer-page {
+  color: #f0ece2 !important;
+}
+
+/* Force all text elements to be visible */
+.trace-product-page *,
+.explorer-container *,
+.manage-custody *,
+.blockchain-explorer-page * {
+  color: #f0ece2 !important;
+}
+
+/* Specific heading fixes */
+.trace-product-page h1,
+.trace-product-page h2,
+.trace-product-page h3,
+.trace-product-page h4,
+.explorer-container h1,
+.explorer-container h2,
+.explorer-container h3,
+.explorer-container h4,
+.manage-custody h1,
+.manage-custody h2,
+.manage-custody h3,
+.manage-custody h4 {
+  color: #f0ece2 !important;
+  text-shadow: none !important;
+}
+
+/* Paragraph and general text */
+.trace-product-page p,
+.trace-product-page div,
+.trace-product-page span,
+.explorer-container p,
+.explorer-container div,
+.explorer-container span,
+.manage-custody p,
+.manage-custody div,
+.manage-custody span {
+  color: #f0ece2 !important;
+}
+
+/* Label and metadata text */
+.trace-product-page label,
+.explorer-container label,
+.manage-custody label,
+.meta-item label,
+.stat-label,
+.detail-item .label,
+.data-item label,
+.subtitle {
+  color: #9ca3af !important;
+  font-weight: 600 !important;
+}
+
+/* Value text - make it brighter */
+.meta-item span,
+.stat-value,
+.data-value,
+.asset-meta span,
+.meta-row span:last-child {
+  color: #f0ece2 !important;
+  font-weight: 500 !important;
+}
+
+/* Form elements visibility */
+.trace-product-page input:not([style*="background: white"]),
+.explorer-container input,
+.manage-custody input,
+.trace-product-page textarea,
+.explorer-container textarea,
+.manage-custody textarea {
+  background: #1a1a24 !important;
+  color: #f0ece2 !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+/* Keep white background inputs as they are (they already have good contrast) */
+.trace-product-page input[style*="background: white"] {
+  background: white !important;
+  color: black !important;
+}
+
+/* Button visibility */
+.trace-product-page button,
+.explorer-container button,
+.manage-custody button {
+  background: #1a1a24 !important;
+  color: #f0ece2 !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+/* Primary button override */
+.btn-primary {
+  background: #d4af37 !important;
+  color: #000 !important;
+  border: none !important;
+}
+
+/* Card content visibility */
+.search-card,
+.asset-summary-card,
+.stat-card,
+.glass-panel,
+.details-box,
+.block-item,
+.product-inspection {
+  background: #12121a !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Force all card content to be visible */
+.search-card *,
+.asset-summary-card *,
+.stat-card *,
+.glass-panel *,
+.details-box *,
+.block-item *,
+.product-inspection * {
+  color: #f0ece2 !important;
+}
+
+/* Asset badge styling */
+.asset-badge {
+  background: #1a1a24 !important;
+  color: #d4af37 !important;
+  border: 1px solid rgba(212, 175, 55, 0.3) !important;
+}
+
+/* Link visibility */
+.trace-product-page a,
+.explorer-container a,
+.manage-custody a {
+  color: #d4af37 !important;
+  text-decoration: none !important;
+}
+
+.trace-product-page a:hover,
+.explorer-container a:hover,
+.manage-custody a:hover {
+  color: #f0d060 !important;
+}
+
+/* Table visibility */
+.trace-product-page table,
+.explorer-container table,
+.manage-custody table,
+.trace-product-page th,
+.trace-product-page td,
+.explorer-container th,
+.explorer-container td,
+.manage-custody th,
+.manage-custody td {
+  color: #f0ece2 !important;
+  background: transparent !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Timeline and history elements */
+.product-timeline,
+.history-item,
+.timeline-node,
+.journey-map-section {
+  color: #f0ece2 !important;
+}
+
+.product-timeline *,
+.history-item *,
+.timeline-node *,
+.journey-map-section * {
+  color: inherit !important;
+}
+
+/* Map section specific */
+.map-header {
+  color: #f0ece2 !important;
+}
+
+.map-header * {
+  color: inherit !important;
+}
+
+/* Live indicator */
+.live-indicator {
+  background: #34d399 !important;
+  box-shadow: 0 0 10px rgba(52, 211, 153, 0.5) !important;
+}
+
+/* Transaction and block items */
+.tx-mini-card,
+.block-number,
+.tx-type {
+  background: #1a1a24 !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  color: #f0ece2 !important;
+}
+
+/* Status indicators */
+.status-toast {
+  background: #1a1a24 !important;
+  color: #f0ece2 !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.status-toast.error {
+  background: rgba(248, 113, 113, 0.1) !important;
+  color: #f87171 !important;
+  border-color: rgba(248, 113, 113, 0.3) !important;
+}
+
+/* Empty states */
+.empty-ledger-state {
+  color: #9ca3af !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* QR and upload zones */
+.qr-upload-zone {
+  background: #111118 !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  color: #f0ece2 !important;
+}
+
+.dropzone-content {
+  color: #f0ece2 !important;
+}
+
+.dropzone-content * {
+  color: inherit !important;
+}
+
+/* Loading spinner */
+.loading-spinner {
+  color: #d4af37 !important;
+}
+
+/* Force visibility for any missed elements */
+[class*="trace"] *,
+[class*="explorer"] *,
+[class*="manage"] *,
+[class*="blockchain"] * {
+  color: #f0ece2 !important;
+}
+
+/* Exception for elements that should keep their specific colors */
+[style*="color: var(--accent-gold)"],
+.key-highlight,
+.tx-type.contract,
+.block-number .value {
+  color: #d4af37 !important;
+}
+
+/* Ensure proper contrast for success elements */
+[style*="color: #34d399"] {
+  color: #34d399 !important;
+}
+
+/* Page-specific fixes */
+.page-header {
+  color: #f0ece2 !important;
+}
+
+.page-header * {
+  color: inherit !important;
+}
+
+/* Connect prompt */
+.connect-prompt {
+  color: #f0ece2 !important;
+}
+
+.connect-prompt * {
+  color: inherit !important;
+}
+
+/* ===== TIMELINE SPECIFIC FIXES ===== */
+/* Fix for ProductTimeline white backgrounds */
+.timeline-marker {
+  background: #1a1a24 !important;
+  border: 2px solid #d4af37 !important;
+}
+
+.timeline-content {
+  background: #12121a !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  color: #f0ece2 !important;
+}
+
+.timeline-content * {
+  color: #f0ece2 !important;
+}
+
+.timeline-header h4 {
+  color: #f0ece2 !important;
+}
+
+.timeline-time {
+  color: #9ca3af !important;
+}
+
+.detail-row {
+  color: #9ca3af !important;
+}
+
+.detail-row strong {
+  color: #f0ece2 !important;
+}
+
+/* Timeline icon colors */
+.timeline-icon {
+  color: #d4af37 !important;
+}
+
+/* Customer event overrides */
+.customer-event .timeline-marker {
+  background: #d4af37 !important;
+  border-color: #d4af37 !important;
+}
+
+.customer-event .timeline-icon {
+  color: #000 !important;
+}
+
+.customer-event .timeline-content {
+  border: 2px solid #d4af37 !important;
+  background: rgba(212, 175, 55, 0.1) !important;
+}
+
+.customer-event .timeline-content * {
+  color: #f0ece2 !important;
+}
+
+/* ===== MANAGE CUSTODY PAGE SPECIFIC FIXES ===== */
+/* Digital Waybill Terminal fixes */
+.digital-waybill {
+  background: #12121a !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  color: #f0ece2 !important;
+}
+
+.digital-waybill * {
+  color: #f0ece2 !important;
+}
+
+/* QR frame visibility */
+.qr-frame {
+  background: white !important;
+  border: 1px solid #d4af37 !important;
+}
+
+/* Metadata rows in waybill */
+.meta-row {
+  color: #f0ece2 !important;
+}
+
+.meta-row span:first-child {
+  color: #9ca3af !important;
+}
+
+.meta-row span:last-child {
+  color: #f0ece2 !important;
+}
+
+/* Waybill content */
+.digital-waybill h3,
+.digital-waybill h4,
+.digital-waybill p {
+  color: #f0ece2 !important;
+}
+
+/* Form inputs in manage page */
+.manage-custody input[type="email"],
+.manage-custody input[type="text"],
+.manage-custody textarea {
+  background: #1a1a24 !important;
+  color: #f0ece2 !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+.manage-custody input::placeholder,
+.manage-custody textarea::placeholder {
+  color: #6b7280 !important;
+}
+
+/* Button fixes for manage page */
+.manage-custody .btn,
+.manage-custody button {
+  background: #1a1a24 !important;
+  color: #f0ece2 !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+/* Send key via email button */
+button[class*="Send"],
+button[class*="send"],
+.btn-send {
+  background: #d4af37 !important;
+  color: #000 !important;
+  border: none !important;
+}
+
+/* Secure download button */
+button[class*="Download"],
+button[class*="download"],
+.btn-download {
+  background: #1a1a24 !important;
+  color: #f0ece2 !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+/* White background sections override */
+.manage-custody [style*="background: white"],
+.manage-custody [style*="background-color: white"] {
+  background: #12121a !important;
+  color: #f0ece2 !important;
+}
+
+/* Any missed white sections */
+.custody-section,
+.waybill-section,
+.download-section {
+  background: #12121a !important;
+  color: #f0ece2 !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.custody-section *,
+.waybill-section *,
+.download-section * {
+  color: #f0ece2 !important;
+}

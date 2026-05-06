@@ -1,0 +1,255 @@
+/* ═══════════════════════════════════════════════════════
+   Register.css — Deep Dark Glassmorphism Registration
+   ═══════════════════════════════════════════════════════ */
+
+.register-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.register-decoration {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+.decoration-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(110px);
+  animation: blob-float 20s ease-in-out infinite;
+}
+.decoration-blob.blob-1 {
+  width: 550px; height: 550px;
+  background: radial-gradient(circle, rgba(168,85,247,0.16) 0%, transparent 70%);
+  top: -280px; right: -280px;
+}
+.decoration-blob.blob-2 {
+  width: 450px; height: 450px;
+  background: radial-gradient(circle, rgba(0,212,255,0.12) 0%, transparent 70%);
+  bottom: -220px; left: -220px;
+  animation-delay: -10s;
+}
+@keyframes blob-float {
+  0%, 100% { transform: translate(0,0) scale(1); }
+  33%       { transform: translate(30px,-30px) scale(1.1); }
+  66%       { transform: translate(-20px,20px) scale(0.9); }
+}
+
+.register-container {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 780px;
+}
+
+.register-card {
+  padding: 2.75rem;
+  border-radius: 20px;
+  background: rgba(10, 10, 22, 0.85);
+  backdrop-filter: blur(32px);
+  -webkit-backdrop-filter: blur(32px);
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 24px 80px rgba(0,0,0,0.55), var(--shadow-glow-purple);
+}
+
+.register-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+.register-header h1 {
+  font-size: 1.75rem;
+  font-weight: 800;
+  margin: 0;
+  font-family: 'Outfit', sans-serif;
+  background: var(--grad-text);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.register-header p {
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  margin-top: 0.5rem;
+}
+
+/* Progress Steps */
+.progress-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2.5rem;
+  padding: 0 1rem;
+}
+.progress-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  position: relative;
+}
+.step-number {
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.04);
+  border: 1.5px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  transition: all 0.4s cubic-bezier(0.4,0,0.2,1);
+}
+.progress-step.active .step-number {
+  background: var(--grad-cta);
+  border-color: transparent;
+  color: #fff;
+  box-shadow: var(--shadow-glow-cta);
+  transform: scale(1.1);
+}
+.progress-step.completed .step-number {
+  background: rgba(0,255,136,0.12);
+  border-color: rgba(0,255,136,0.28);
+  color: var(--emerald);
+}
+.progress-step span {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  font-family: 'Outfit', sans-serif;
+}
+.progress-step.active span { color: var(--text-primary); }
+.progress-line {
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+  margin: 0 1rem;
+  margin-bottom: 2rem;
+}
+
+/* Form */
+.register-form {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+.form-step {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+.form-step h3 {
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin-bottom: 0.15rem;
+  font-family: 'Outfit', sans-serif;
+  background: var(--grad-text);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.step-description {
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  margin-bottom: 0.5rem;
+}
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+.form-group label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+}
+.form-group input {
+  padding: 0.8rem 1rem;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  transition: var(--transition);
+  outline: none;
+}
+.form-group input:focus {
+  background: rgba(255,255,255,0.06);
+  border-color: var(--purple);
+  box-shadow: 0 0 0 3px var(--purple-dim);
+}
+.form-group input.error { border-color: rgba(251,44,54,0.5); }
+.form-group input::placeholder { color: var(--text-muted); }
+
+.error-message {
+  font-size: 0.78rem;
+  color: var(--error);
+  margin-top: 0.15rem;
+  font-weight: 500;
+}
+
+/* Info Boxes */
+.info-box {
+  display: flex;
+  gap: 0.85rem;
+  padding: 1rem 1.25rem;
+  background: var(--purple-dim);
+  border: 1px solid var(--purple-glow);
+  border-radius: 12px;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  line-height: 1.6;
+}
+.info-box.warning {
+  background: rgba(251,44,54,0.05);
+  border-color: rgba(251,44,54,0.18);
+}
+.info-box.warning p strong { color: var(--error); }
+.info-box svg { flex-shrink: 0; margin-top: 0.125rem; }
+
+/* Buttons */
+.form-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+  margin-top: 1rem;
+}
+.spinner {
+  width: 16px; height: 16px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+  display: inline-block;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.register-footer {
+  margin-top: 1.5rem;
+  text-align: center;
+}
+.register-footer p { color: var(--text-muted); font-size: 0.88rem; }
+
+.link {
+  color: var(--purple-light);
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.2s;
+}
+.link:hover { color: var(--cyan-light); }
+
+@media (max-width: 768px) {
+  .register-card      { padding: 2rem 1.5rem; }
+  .register-header h1 { font-size: 1.5rem; }
+  .progress-indicator { padding: 0; }
+  .progress-step span { font-size: 0.68rem; }
+  .form-actions       { flex-direction: column-reverse; }
+}

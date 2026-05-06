@@ -1,0 +1,672 @@
+import React, { useState } from "react";
+import { useSupplyChain } from "../hooks/useSupplyChain";
+import { motion, AnimatePresence } from "framer-motion";
+import { toast } from "react-toastify";
+import {
+    ShieldCheck,
+    QrCode,
+    Package,
+    User,
+    MapPin,
+    Clock,
+    AlertTriangle,
+    CheckCircle2,
+    FileText,
+    Upload
+} from "lucide-react";
+import { getLocationString, isGeolocationAvailable } from "../utils/geolocation";
+import CertificateViewer from "../components/CertificateViewer";
+import "./VerifyProduct.css";
+
+const VerifyProduct = () => {
+    const { account, connectWallet, claimCustomerOwnership, getProductData, getFormattedProductId, getProductDataSmart } = useSupplyChain();
+    const [productId, setProductId] = useState("");
+    const [secretCode, setSecretCode] = useState("");
+    const [customerName, setCustomerName] = useState("");
+    const [status, setStatus] = useState({ type: "", msg: "", title: "", icon: null });
+    const [loading, setLoading] = useState(false);
+    const [product, setProduct] = useState(null);
+    const [showCertificates, setShowCertificates] = useState(false);
+    const [locationLoading, setLocationLoading] = useState(false);
+    const [waybillFile, setWaybillFile] = useState(null);
+    const [waybillUploaded, setWaybillUploaded] = useState(false);
+    const [activeTab, setActiveTab] = useState('manual');
+    const [formattedProductId, setFormattedProductId] = useState(""); // For display
+
+    // Handle waybill QR upload
+    const handleWaybillUpload = async (event) => {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        setLoading(true);
+        setWaybillFile(file);
+
+        try {
+            const { Html5Qrcode } = await import('html5-qrcode');
+            const html5QrCode = new Html5Qrcode("qr-reader-hidden");
+
+            const qrCodeSuccessCallback = async (decodedText) => {
+                try {
+                    console.log("Waybill QR Scanned:", decodedText);
+                    const waybillData = JSON.parse(decodedText);
+
+                    if (waybillData.productId) {
+                        setProductId(waybillData.productId);
+                        setWaybillUploaded(true);
+                        toast.success("Waybill scanned! Now enter your scratch-off code.");
+
+                        // Format product ID for display
+                        try {
+                            const formatted = await getFormattedProductId(waybillData.productId);
+                            setFormattedProductId(formatted);
+
+                            setStatus({
+                                type: "info",
+                                title: "WAYBILL VERIFIED",
+                                msg: `Product ${formatted} identified. Enter your scratch-off code to verify authenticity.`,
+                                icon: <CheckCircle2 className="status-icon" />
+                            });
+                        } catch (err) {
+                            console.warn("Failed to format product ID:", err);
+                            setFormattedProductId(`#${waybillData.productId}`);
+
+                            setStatus({
+                                type: "info",
+                                title: "WAYBILL VERIFIED",
+                                msg: `Product #${waybillData.productId} identified. Enter your scratch-off code to verify authenticity.`,
+                                icon: <CheckCircle2 className="status-icon" />
+                            });
+                        }
+                    } else {
+                        throw new Error("Invalid waybill format");
+                    }
+                } catch (parseError) {
+                    console.error("Parse error:", parseError);
+                    toast.error("Invalid waybill QR code");
+                    setStatus({
+                        type: "error",
+                        title: "INVALID WAYBILL",
+                        msg: "The QR code is not a valid waybill.",
+                        icon: <AlertTriangle className="status-icon" />
+                    });
+                }
+                html5QrCode.clear();
+            };
+
+            await html5QrCode.scanFile(file, true)
+                .then(qrCodeSuccessCallback)
+                .catch(err => {
+                    console.error("QR scan error:", err);
+                    toast.error("Failed to read QR code");
+                });
+
+        } catch (error) {
+            console.error("Upload error:", error);
+            toast.error("Failed to process waybill");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleManualVerify = async () => {
+        if (!productId || !secretCode) {
+            toast.warn("Please upload waybill and enter scratch-off code");
+            return;
+        }
+
+        setLoading(true);
+        setStatus({
+            type: "loading",
+            title: "VERIFYING ASSET",
+            msg: "Checking blockchain records...",
+            icon: <ShieldCheck className="status-icon animate-spin" />
+        });
+
+        try {
+            // Use smart lookup that handles formatted IDs (A1, B2, #3, etc.)
+            const data = await getProductDataSmart(productId);
+            setProduct(data);
+
+            // Update formatted ID from the smart lookup result
+            setFormattedProductId(data.formattedId);
+
+            // Fetch the Keccak256 hash of the entered secret to compare
+            const { ethers } = await import("ethers");
+            const inputHash = ethers.keccak256(ethers.toUtf8Bytes(secretCode));
+
+            if (data.consumerSecretHash === inputHash) {
+                if (data.isConsumed || (data.customerClaim && data.customerClaim.isClaimed)) {
+                    setStatus({
+                        type: "info",
+                        title: "ALREADY CLAIMED",
+                        msg: "This product is authentic but has already been claimed.",
+                        icon: <CheckCircle2 className="status-icon" />
+                    });
+                } else {
+                    setStatus({
+                        type: "success",
+                        title: "AUTHENTICITY VERIFIED",
+                        msg: "Secret key matches! You can now claim ownership below.",
+                        icon: <ShieldCheck className="status-icon" />
+                    });
+                    toast.success("✅ Asset Verified Successfully!");
+                }
+            } else {
+                setStatus({
+                    type: "error",
+                    title: "VERIFICATION FAILED",
+                    msg: "The secret key entered does not match this product's record.",
+                    icon: <AlertTriangle className="status-icon" />
+                });
+                toast.error("Verification failed: Invalid Secret Key");
+            }
+        } catch (err) {
+            console.error(err);
+            setStatus({
+                type: "error",
+                title: "NOT FOUND",
+                msg: `Product ${formattedProductId || `#${productId}`} could not be located on the blockchain.`,
+                icon: <AlertTriangle className="status-icon" />
+            });
+            toast.error("Product not found");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleQRUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        setLoading(true);
+        const reader = new FileReader();
+        reader.onload = async (event) => {
+            const image = new Image();
+            image.src = event.target.result;
+            image.onload = async () => {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                canvas.width = image.width;
+                canvas.height = image.height;
+                ctx.drawImage(image, 0, 0);
+                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+                const jsQR = (await import('jsqr')).default;
+                const code = jsQR(imageData.data, imageData.width, imageData.height);
+
+                if (code) {
+                    try {
+                        const qrData = JSON.parse(code.data);
+                        const scannedId = qrData.productId || qrData.id;
+                        const scannedSecret = qrData.secretCode || qrData.secret;
+
+                        if (scannedId && scannedSecret) {
+                            setProductId(scannedId);
+                            setSecretCode(scannedSecret);
+
+                            // Fetch product data using smart lookup
+                            const data = await getProductDataSmart(scannedId);
+                            setProduct(data);
+                            setFormattedProductId(data.formattedId);
+
+                            // Check if already claimed
+                            if (data.customerClaim && data.customerClaim.isClaimed) {
+                                setStatus({
+                                    type: "info",
+                                    title: "ALREADY CLAIMED",
+                                    msg: "This product has already been claimed by a customer.",
+                                    icon: <CheckCircle2 className="status-icon" />
+                                });
+                            } else {
+                                setStatus({
+                                    type: "success",
+                                    title: "PRODUCT VERIFIED",
+                                    msg: "QR code is valid. You can claim ownership of this product.",
+                                    icon: <ShieldCheck className="status-icon" />
+                                });
+                            }
+
+                            toast.success("QR Scanned Successfully!");
+                        } else {
+                            toast.error("Invalid QR code format");
+                        }
+                    } catch (err) {
+                        console.error(err);
+                        toast.error("Invalid QR format");
+                    }
+                } else {
+                    toast.error("No QR code found in image");
+                }
+                setLoading(false);
+            };
+        };
+        reader.readAsDataURL(file);
+    };
+
+    const handleClaimOwnership = async () => {
+        if (!account) {
+            toast.error("Please connect your wallet first");
+            return;
+        }
+
+        if (!productId || !secretCode) {
+            toast.error("Please scan a valid QR code first");
+            return;
+        }
+
+        if (!customerName.trim()) {
+            toast.error("Please enter your name");
+            return;
+        }
+
+        if (!isGeolocationAvailable()) {
+            toast.error("Geolocation is not supported by your browser");
+            return;
+        }
+
+        setLoading(true);
+        setLocationLoading(true);
+        setStatus({
+            type: "loading",
+            title: "FETCHING LOCATION",
+            msg: "Please allow location access when prompted...",
+            icon: <MapPin className="status-icon animate-pulse" />
+        });
+
+        try {
+            // Get user's location
+            const location = await getLocationString();
+            setLocationLoading(false);
+
+            setStatus({
+                type: "loading",
+                title: "CLAIMING OWNERSHIP",
+                msg: "Processing your claim on the blockchain...",
+                icon: <Package className="status-icon animate-spin" />
+            });
+
+            // Claim ownership on blockchain
+            const result = await claimCustomerOwnership(productId, secretCode, customerName, location);
+
+            if (result.status === "claimed") {
+                // Refresh product data using smart lookup
+                const updatedData = await getProductDataSmart(productId);
+                setProduct(updatedData);
+                setFormattedProductId(updatedData.formattedId);
+
+                setStatus({
+                    type: "success",
+                    title: "OWNERSHIP CLAIMED",
+                    msg: "Congratulations! You are now the verified owner of this product.",
+                    icon: <CheckCircle2 className="status-icon" />
+                });
+            } else {
+                setStatus({
+                    type: "error",
+                    title: "CLAIM FAILED",
+                    msg: "Failed to claim ownership. Please try again.",
+                    icon: <AlertTriangle className="status-icon" />
+                });
+            }
+        } catch (error) {
+            console.error("=== CLAIM OWNERSHIP ERROR ===");
+            console.error("Full error:", error);
+            console.error("Error message:", error.message);
+            console.error("Error reason:", error.reason);
+            console.error("Error code:", error.code);
+            console.error("Error data:", error.data);
+            setLocationLoading(false);
+
+            let errorMsg = "Failed to claim ownership";
+
+            // Check for specific error types
+            if (error.message) {
+                if (error.message.includes("All location methods failed") ||
+                    error.message.includes("check your connection")) {
+
+                    errorMsg = "Unable to determine your location. Please check your internet connection or try a different network.";
+
+                    setStatus({
+                        type: "error",
+                        title: "LOCATION FAILED",
+                        msg: errorMsg,
+                        icon: <MapPin className="status-icon" />
+                    });
+                } else if (error.message.includes("permission") || error.message.includes("denied")) {
+                    errorMsg = "Location access was denied. I'll try to find you via IP, but if that fails, please enable location in settings.";
+                } else if (error.message.includes("Invalid secret") || error.message.includes("Security:")) {
+                    errorMsg = "Invalid QR code or product already claimed.";
+                } else if (error.message.includes("user rejected") || error.message.includes("User denied")) {
+                    errorMsg = "Transaction rejected. Please approve the transaction in MetaMask.";
+                } else if (error.reason) {
+                    errorMsg = `Transaction failed: ${error.reason}`;
+                } else {
+                    errorMsg = `Failed to claim: ${error.message}`;
+                }
+            }
+
+            setStatus({
+                type: "error",
+                title: "CLAIM FAILED",
+                msg: errorMsg,
+                icon: <AlertTriangle className="status-icon" />
+            });
+            toast.error(errorMsg);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const formatLocation = (locString) => {
+        if (!locString) return { coords: "Unknown", address: "" };
+
+        // Handle the new format: "lat,lng|City, State, Country"
+        if (locString.includes('|')) {
+            const [coords, address] = locString.split('|');
+            const [lat, lng] = coords.split(',');
+            return {
+                coords: `${parseFloat(lat).toFixed(4)}°, ${parseFloat(lng).toFixed(4)}°`,
+                address: address
+            };
+        }
+
+        // Handle old format: "lat,lng"
+        const [lat, lng] = locString.split(',');
+        return {
+            coords: `${parseFloat(lat).toFixed(4)}°, ${parseFloat(lng).toFixed(4)}°`,
+            address: ""
+        };
+    };
+
+    const formatTimestamp = (timestamp) => {
+        if (!timestamp) return "Unknown";
+        return new Date(timestamp).toLocaleString();
+    };
+
+    return (
+        <motion.div
+            className="verify-container"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+        >
+            <header className="verify-header">
+                <div className="header-badge">
+                    <ShieldCheck size={16} />
+                    <span>Trust Verification Protocol</span>
+                </div>
+                <h1>Asset Identification</h1>
+                <p>Authenticate your luxury items via blockchain-backed provenance auditing.</p>
+            </header>
+
+            <div className="verify-content">
+                {/* Method Selector Tabs */}
+                <div className="method-tabs">
+                    <button
+                        className={`tab-btn ${activeTab === "qr" ? "active" : ""}`}
+                        onClick={() => setActiveTab("qr")}
+                    >
+                        <QrCode size={18} />
+                        Identity Scan
+                    </button>
+                    <button
+                        className={`tab-btn ${activeTab === "manual" ? "active" : ""}`}
+                        onClick={() => setActiveTab("manual")}
+                    >
+                        <FileText size={18} />
+                        Manual Audit
+                    </button>
+                </div>
+
+                <AnimatePresence mode="wait">
+                    {activeTab === "qr" ? (
+                        /* QR Upload Section */
+                        <motion.div
+                            key="qr-section"
+                            className="qr-upload-section glass-panel"
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                        >
+                            <div className="upload-icon-wrapper">
+                                <QrCode size={40} />
+                            </div>
+                            <h3>Identity Card Scan</h3>
+                            <p>Upload the high-security QR code from your physical packaging.</p>
+
+                            <label className="upload-button">
+                                <Upload size={20} />
+                                <span>Scan Media Archive</span>
+                                <input
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={handleQRUpload}
+                                    hidden
+                                    disabled={loading}
+                                />
+                            </label>
+
+                            {loading && activeTab === "qr" && (
+                                <div className="loading-state" style={{ marginTop: '2rem' }}>
+                                    <div className="spinner"></div>
+                                    <p>Decrypting Identity Matrix...</p>
+                                </div>
+                            )}
+                        </motion.div>
+                    ) : (
+                        /* Manual Entry Section */
+                        <motion.div
+                            key="manual-section"
+                            className="manual-entry-section glass-panel"
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                        >
+                            <div className="form-header">
+                                <h3>Manual Node Verification</h3>
+                                <p>Provide secure identifiers from your digital waybill.</p>
+                            </div>
+
+                            <div className="manual-form">
+                                {/* Waybill QR Upload */}
+                                <div className="input-field-group">
+                                    <label> Digital Waybill Manifest</label>
+                                    <div id="qr-reader-hidden" style={{ display: "none" }}></div>
+                                    <div className="file-input-wrapper">
+                                        <Upload size={24} style={{ marginBottom: '0.5rem', color: '#666' }} />
+                                        <p style={{ fontSize: '0.85rem', color: '#888' }}>
+                                            {waybillUploaded ? "✓ Waybill Staged" : "Drop Manifest or Click to Upload"}
+                                        </p>
+                                        <input type="file" accept="image/*" onChange={handleWaybillUpload} disabled={loading} />
+                                    </div>
+                                </div>
+                                <div className="input-field-group">
+                                    <label> Scratch-Off Verification Node</label>
+                                    <input
+                                        type="text"
+                                        placeholder="EX: 43D2-X90A-..."
+                                        value={secretCode}
+                                        onChange={(e) => setSecretCode(e.target.value)}
+                                        disabled={loading}
+                                    />
+                                </div>
+                                <button
+                                    className="btn btn-primary btn-large"
+                                    onClick={handleManualVerify}
+                                    disabled={loading || !productId || !secretCode}
+                                >
+                                    {loading ? "Decrypting..." : "Execute Verification"}
+                                </button>
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+                {/* Status Display */}
+                <AnimatePresence mode="wait">
+                    {status.msg && (
+                        <motion.div
+                            className={`status-card ${status.type}`}
+                            initial={{ opacity: 0, x: 20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: -20 }}
+                        >
+                            <div className="status-icon-wrapper">
+                                {status.icon}
+                            </div>
+                            <div className="status-info">
+                                <h3>{status.title}</h3>
+                                <p>{status.msg}</p>
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+                {/* Product Info & Claim Section */}
+                {product && (
+                    <motion.div
+                        className="product-section glass-panel"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                    >
+                        <div className="product-hero">
+                            <div className="product-icon-box">
+                                <Package size={40} />
+                            </div>
+                            <div className="product-title-group">
+                                <h2>{product.name}</h2>
+                                <span className="id-badge">ASSET NODE {formattedProductId || `#${productId}`}</span>
+                            </div>
+                        </div>
+
+                        {product.customerClaim && product.customerClaim.isClaimed ? (
+                            /* Already Claimed - Show Owner Info */
+                            <div className="claimed-info">
+                                <div className="form-title-row">
+                                    <h3>Ownership Audit</h3>
+                                </div>
+                                <div className="info-grid">
+                                    <div className="info-item">
+                                        <div className="info-icon">
+                                            <User size={20} style={{ color: '#666' }} />
+                                        </div>
+                                        <div>
+                                            <label>Registered Custodian</label>
+                                            <p>{product.customerClaim.customerName}</p>
+                                        </div>
+                                    </div>
+                                    <div className="info-item">
+                                        <div className="info-icon">
+                                            <MapPin size={20} style={{ color: '#d4af37' }} />
+                                        </div>
+                                        <div>
+                                            <label>Geo-Spatial Tag</label>
+                                            <p className="coords">{formatLocation(product.customerClaim.location).coords}</p>
+                                            {formatLocation(product.customerClaim.location).address && (
+                                                <p className="address-details" style={{ fontSize: '0.8rem', color: '#888', fontStyle: 'italic' }}>
+                                                    {formatLocation(product.customerClaim.location).address}
+                                                </p>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <div className="info-item">
+                                        <div className="info-icon">
+                                            <Clock size={20} style={{ color: '#666' }} />
+                                        </div>
+                                        <div>
+                                            <label>Registration Epoch</label>
+                                            <p>{formatTimestamp(product.customerClaim.timestamp)}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        ) : (
+                            /* Not Claimed - Show Claim Form */
+                            <div className="claim-form">
+                                <div className="form-title-row">
+                                    <h3>Custodian Registration</h3>
+                                </div>
+                                <p className="form-description" style={{ color: '#666', marginBottom: '2rem' }}>
+                                    Establish final point-of-consumption ownership on the immutable ledger.
+                                </p>
+
+                                {!account ? (
+                                    <div className="wallet-notice">
+                                        <AlertTriangle size={24} color="#d4af37" />
+                                        <div style={{ flex: 1 }}>
+                                            <p style={{ fontWeight: '600', color: '#1a1a1a' }}>Web3 Auth Required</p>
+                                            <p style={{ fontSize: '0.85rem', color: '#666' }}>Connect your secure wallet to claim this asset.</p>
+                                        </div>
+                                        <button className="btn btn-primary" onClick={connectWallet} style={{ padding: '0.8rem 1.5rem', borderRadius: '12px' }}>
+                                            INITIATE AUTH
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div className="manual-form">
+                                        <div className="input-field-group">
+                                            <label> Legal Name of Custodian</label>
+                                            <input
+                                                type="text"
+                                                placeholder="Enter full legal name"
+                                                value={customerName}
+                                                onChange={(e) => setCustomerName(e.target.value)}
+                                                disabled={loading}
+                                            />
+                                        </div>
+
+                                        <div className="location-pill">
+                                            <MapPin size={14} />
+                                            <span>Geo-tagging active (Automatic Fetch)</span>
+                                        </div>
+
+                                        <button
+                                            className="btn btn-primary btn-large"
+                                            onClick={handleClaimOwnership}
+                                            disabled={loading || !customerName.trim()}
+                                        >
+                                            {loading ? (
+                                                <>
+                                                    <div className="spinner-small"></div>
+                                                    <span>Securing Registry...</span>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <ShieldCheck size={20} />
+                                                    <span>Claim Custody</span>
+                                                </>
+                                            )}
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {/* View Certificates Button */}
+                        {product.history && product.history.length > 0 && (
+                            <button
+                                className="btn-certificates"
+                                onClick={() => setShowCertificates(true)}
+                            >
+                                <FileText size={18} />
+                                AUDIT PROVENANCE CERTIFICATES
+                            </button>
+                        )}
+                    </motion.div>
+                )}
+            </div>
+
+            {/* Certificate Viewer Modal */}
+            {showCertificates && product && (
+                <CertificateViewer
+                    productHistory={product.history}
+                    productId={productId}
+                    onClose={() => setShowCertificates(false)}
+                />
+            )}
+        </motion.div>
+    );
+};
+
+export default VerifyProduct;
+
+
+

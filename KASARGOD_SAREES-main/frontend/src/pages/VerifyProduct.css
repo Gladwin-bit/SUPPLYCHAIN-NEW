@@ -1,0 +1,212 @@
+/* src/pages/VerifyProduct.css — Purple/Cyan Redesign */
+
+.verify-container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 4rem 2rem;
+    min-height: 100vh;
+}
+
+/* Header */
+.verify-header {
+    text-align: center;
+    margin-bottom: 4rem;
+}
+.header-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: var(--purple-dim);
+    border: 1px solid var(--purple-glow);
+    color: var(--purple-light);
+    padding: 0.4rem 1rem;
+    border-radius: var(--radius-pill);
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+.verify-header h1 {
+    font-family: 'Outfit', sans-serif;
+    font-size: 2.5rem;
+    font-weight: 800;
+    margin: 1rem 0;
+    letter-spacing: -0.03em;
+    background: var(--grad-text);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+.verify-header p {
+    color: var(--text-secondary);
+    font-size: 1.1rem;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+/* Method Tabs */
+.method-tabs {
+    display: flex;
+    justify-content: center;
+    gap: 0.75rem;
+    margin-bottom: 2rem;
+}
+.tab-btn {
+    padding: 0.75rem 1.5rem;
+    border: 1px solid var(--glass-border);
+    background: var(--glass-bg);
+    border-radius: var(--radius);
+    font-weight: 600;
+    font-size: 0.88rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: var(--transition);
+    backdrop-filter: var(--glass-blur);
+}
+.tab-btn:hover {
+    border-color: var(--purple-glow);
+    color: var(--purple-light);
+    background: var(--purple-dim);
+}
+.tab-btn.active {
+    background: var(--grad-cta);
+    color: white;
+    border-color: transparent;
+    box-shadow: var(--shadow-glow-cta);
+}
+
+/* Content Panels */
+.glass-panel {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-lg);
+    padding: 3rem;
+    box-shadow: var(--shadow-card);
+    backdrop-filter: var(--glass-blur);
+}
+
+/* QR Upload */
+.qr-upload-section { text-align: center; }
+.upload-icon-wrapper {
+    width: 64px; height: 64px;
+    background: var(--purple-dim);
+    border: 1px solid var(--purple-glow);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--purple-light);
+    margin: 0 auto 1.5rem;
+}
+.upload-button {
+    background: var(--grad-cta);
+    color: white;
+    padding: 1rem 2rem;
+    border-radius: var(--radius-pill);
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+    border: none;
+    cursor: pointer;
+    box-shadow: var(--shadow-glow-cta);
+    transition: var(--transition);
+}
+.upload-button:hover { filter: brightness(1.1); transform: translateY(-2px); }
+
+/* Manual Form */
+.manual-form { max-width: 500px; margin: 0 auto; }
+.input-field-group { margin-bottom: 1.5rem; }
+.input-field-group label {
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 0.5rem;
+}
+.input-field-group input {
+    width: 100%;
+    padding: 0.85rem 1.25rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: rgba(255,255,255,0.04);
+    color: var(--text-primary);
+    outline: none;
+    transition: var(--transition);
+}
+.input-field-group input:focus { border-color: var(--purple); box-shadow: 0 0 0 3px var(--purple-dim); }
+
+/* Status Cards */
+.status-card {
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    display: flex;
+    gap: 1.25rem;
+    margin-top: 2rem;
+    backdrop-filter: var(--glass-blur);
+}
+.status-card.success {
+    background: rgba(5,223,114,0.06);
+    border: 1px solid rgba(5,223,114,0.22);
+}
+.status-card.info {
+    background: var(--cyan-dim);
+    border: 1px solid var(--cyan-glow);
+}
+.status-card.error {
+    background: rgba(251,44,54,0.06);
+    border: 1px solid rgba(251,44,54,0.22);
+}
+.status-icon-wrapper {
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    background: var(--purple-dim);
+    border: 1px solid var(--purple-glow);
+}
+
+/* Product Section */
+.product-title-group h2 {
+    font-family: 'Outfit', sans-serif;
+    font-size: 2rem;
+    font-weight: 800;
+    margin-bottom: 0.5rem;
+    background: var(--grad-text);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+.id-badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    color: var(--purple-light);
+    background: var(--purple-dim);
+    border: 1px solid var(--purple-glow);
+    padding: 0.25rem 0.75rem;
+    border-radius: 6px;
+}
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    margin-top: 2rem;
+}
+.info-item {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    padding: 1.25rem;
+    border-radius: var(--radius);
+    backdrop-filter: var(--glass-blur);
+}
+
+@media (max-width: 768px) {
+    .verify-header h1 { font-size: 2rem; }
+    .info-grid         { grid-template-columns: 1fr; }
+    .glass-panel       { padding: 1.5rem; }
+}

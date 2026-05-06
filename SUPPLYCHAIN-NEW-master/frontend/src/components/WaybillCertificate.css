@@ -1,0 +1,148 @@
+/* src/components/WaybillCertificate.css */
+.waybill-certificate {
+    background: var(--bg-secondary, rgba(15, 20, 35, 0.95));
+    border: 1px solid rgba(212, 175, 55, 0.15);
+    border-radius: var(--border-radius-md);
+    padding: 2.5rem;
+    margin: 2rem 0;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    position: relative;
+    overflow: hidden;
+    color: var(--text-primary, #e8e8e8);
+}
+
+.waybill-certificate::after {
+    content: 'VERIFIED';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(-30deg);
+    font-size: 5rem;
+    font-weight: 900;
+    color: rgba(212, 175, 55, 0.04);
+    pointer-events: none;
+    white-space: nowrap;
+}
+
+.cert-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid rgba(212, 175, 55, 0.15);
+}
+
+.cert-header h4 {
+    margin: 0;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.2rem;
+    color: var(--text-primary);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.cert-icon {
+    color: var(--accent-gold);
+}
+
+.cert-body {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.cert-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 0.5rem 0;
+}
+
+.cert-label {
+    color: var(--text-tertiary, rgba(200, 200, 200, 0.6));
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+}
+
+/* Also style bare span labels in cert-row (used in inline bulk cert) */
+.cert-row > span:first-child {
+    color: var(--text-tertiary, rgba(200, 200, 200, 0.6));
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.cert-value {
+    color: var(--text-primary);
+    font-weight: 600;
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-align: right;
+    max-width: 60%;
+    word-break: break-all;
+}
+
+.cert-key-hidden {
+    font-family: 'JetBrains Mono', monospace;
+    letter-spacing: 4px;
+    color: var(--text-muted);
+}
+
+.verified-icon {
+    color: var(--accent-success);
+}
+
+.warning-icon {
+    color: var(--accent-error);
+}
+
+.cert-footer {
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.cert-status {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem 1.5rem;
+    border-radius: var(--border-radius-sm);
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.cert-status.verified {
+    background: var(--accent-gold-glow);
+    border: 1px solid rgba(212, 175, 55, 0.2);
+    color: var(--accent-gold);
+}
+
+.cert-status.warning {
+    background: rgba(220, 38, 38, 0.05);
+    border: 1px solid rgba(220, 38, 38, 0.2);
+    color: var(--accent-error);
+}
+
+.fade-in {
+    animation: certSlideUp 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+@keyframes certSlideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

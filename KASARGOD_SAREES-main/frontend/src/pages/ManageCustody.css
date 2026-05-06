@@ -1,0 +1,180 @@
+/* src/pages/ManageCustody.css — Purple/Cyan Redesign */
+
+.manage-custody {
+    min-height: calc(100vh - var(--nav-height));
+    padding: 4rem 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* Header */
+.page-header {
+    text-align: center;
+    margin-bottom: 4rem;
+}
+.page-header h2 {
+    font-family: 'Outfit', sans-serif;
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+    letter-spacing: -0.04em;
+    background: var(--grad-text);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+.subtitle {
+    font-size: 0.875rem;
+    color: var(--purple-light);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-weight: 700;
+}
+
+/* Panels */
+.glass-panel {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-lg);
+    padding: 2.5rem;
+    box-shadow: var(--shadow-card);
+    backdrop-filter: var(--glass-blur);
+    transition: var(--transition);
+}
+
+.search-card-content h3 {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    color: var(--text-primary);
+}
+.help-text {
+    font-size: 0.95rem;
+    color: var(--text-secondary);
+    margin-bottom: 2rem;
+}
+
+/* QR Upload Zone */
+.qr-upload-zone {
+    border: 2px dashed var(--border);
+    border-radius: var(--radius);
+    background: rgba(255,255,255,0.02);
+    transition: var(--transition);
+}
+.qr-upload-zone:hover {
+    border-color: var(--purple-glow);
+    background: var(--purple-dim);
+}
+
+.dropzone-content {
+    padding: 3rem 2rem;
+    text-align: center;
+}
+.dropzone-content p { font-weight: 700; margin-bottom: 0.25rem; color: var(--text-primary); }
+.dropzone-content small { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; }
+
+/* Manual Lookup */
+.lookup-section {
+    margin-top: 3rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--border);
+}
+.lookup-label {
+    display: block;
+    font-size: 0.74rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    text-align: center;
+    margin-bottom: 1rem;
+    letter-spacing: 0.08em;
+}
+.search-group {
+    display: flex;
+    gap: 0.75rem;
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+/* Details View */
+.details-grid-layout {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+}
+.details-box {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    backdrop-filter: var(--glass-blur);
+}
+.details-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.id-badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    color: var(--purple-light);
+    background: var(--purple-dim);
+    padding: 0.4rem 0.8rem;
+    border-radius: 6px;
+    border: 1px solid var(--purple-glow);
+}
+
+.data-item label {
+    display: block;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 0.5rem;
+    letter-spacing: 0.08em;
+}
+.data-value {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--text-primary);
+}
+.address-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85rem;
+    color: var(--cyan);
+    opacity: 0.85;
+}
+
+/* Waybill */
+.digital-waybill {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 2rem;
+    text-align: center;
+}
+.qr-frame {
+    padding: 1rem;
+    background: white;
+    display: inline-block;
+    margin-bottom: 1.5rem;
+}
+.meta-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    margin-bottom: 0.5rem;
+}
+.meta-row span:first-child { color: #555; font-weight: 700; }
+.meta-row span:last-child  { font-family: 'JetBrains Mono', monospace; color: #222; }
+.key-highlight { color: var(--purple); font-weight: 700; }
+
+@media (max-width: 768px) {
+    .manage-custody { padding: 2rem 1rem; }
+    .page-header h2 { font-size: 1.75rem; }
+}

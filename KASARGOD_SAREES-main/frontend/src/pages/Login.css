@@ -1,0 +1,177 @@
+/* ═══════════════════════════════════════════════════════
+   Login.css — Deep Dark Glassmorphism Login Page
+   ═══════════════════════════════════════════════════════ */
+
+.login-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Decorative orbs behind card */
+.login-decoration {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+.decoration-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(110px);
+  animation: blob-float 20s ease-in-out infinite;
+}
+.decoration-blob.blob-1 {
+  width: 450px; height: 450px;
+  background: radial-gradient(circle, rgba(168,85,247,0.18) 0%, transparent 70%);
+  top: -220px; right: -220px;
+}
+.decoration-blob.blob-2 {
+  width: 350px; height: 350px;
+  background: radial-gradient(circle, rgba(0,212,255,0.14) 0%, transparent 70%);
+  bottom: -180px; left: -180px;
+  animation-delay: -10s;
+}
+.decoration-blob.blob-3 {
+  width: 280px; height: 280px;
+  background: radial-gradient(circle, rgba(0,255,136,0.08) 0%, transparent 70%);
+  top: 50%; left: 50%;
+  transform: translate(-50%,-50%);
+  animation-delay: -5s;
+}
+@keyframes blob-float {
+  0%, 100% { transform: translate(0,0) scale(1); }
+  33%       { transform: translate(30px,-30px) scale(1.1); }
+  66%       { transform: translate(-20px,20px) scale(0.9); }
+}
+
+.login-container {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 440px;
+}
+
+.login-card {
+  padding: 2.75rem;
+  border-radius: 20px;
+  background: rgba(10, 10, 22, 0.85);
+  backdrop-filter: blur(32px);
+  -webkit-backdrop-filter: blur(32px);
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 24px 80px rgba(0,0,0,0.55), var(--shadow-glow-purple);
+}
+
+.login-header {
+  text-align: center;
+  margin-bottom: 2.25rem;
+}
+.logo-section {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+.login-header h1 {
+  font-size: 1.75rem;
+  font-weight: 800;
+  margin: 0;
+  font-family: 'Outfit', sans-serif;
+  background: var(--grad-text);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.login-header p {
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  margin-top: 0.5rem;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.form-group label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+}
+.form-group input {
+  padding: 0.8rem 1rem;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  transition: var(--transition);
+  outline: none;
+}
+.form-group input:focus {
+  background: rgba(255,255,255,0.06);
+  border-color: var(--purple);
+  box-shadow: 0 0 0 3px var(--purple-dim);
+}
+.form-group input.error { border-color: rgba(251,44,54,0.5); }
+.form-group input::placeholder { color: var(--text-muted); }
+
+.error-message {
+  font-size: 0.78rem;
+  color: var(--error);
+  margin-top: 0.15rem;
+}
+
+.btn-block  { width: 100%; margin-top: 0.5rem; }
+
+.spinner {
+  width: 16px; height: 16px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+  display: inline-block;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.login-footer {
+  margin-top: 1.75rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+.login-footer p { color: var(--text-muted); font-size: 0.88rem; }
+
+.link {
+  color: var(--purple-light);
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.2s;
+}
+.link:hover { color: var(--cyan-light); }
+
+.link-secondary {
+  color: var(--text-muted);
+  text-decoration: none;
+  font-size: 0.85rem;
+  transition: color 0.2s;
+}
+.link-secondary:hover { color: var(--text-secondary); }
+
+@media (max-width: 640px) {
+  .login-card      { padding: 2rem 1.5rem; }
+  .login-header h1 { font-size: 1.5rem; }
+}

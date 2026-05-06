@@ -1,0 +1,108 @@
+/* src/pages/Profile.css — Purple/Cyan Redesign */
+
+.profile-container {
+    min-height: 100vh;
+    padding: 4rem 2rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.profile-card {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-lg);
+    padding: 3rem;
+    max-width: 600px;
+    width: 100%;
+    box-shadow: var(--shadow-glow-purple);
+    backdrop-filter: var(--glass-blur);
+}
+
+.profile-card h1 {
+    font-family: 'Outfit', sans-serif;
+    font-size: 2rem;
+    font-weight: 800;
+    margin-bottom: 2rem;
+    letter-spacing: -0.03em;
+    background: var(--grad-text);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.profile-section {
+    margin-bottom: 2rem;
+    padding-bottom: 2rem;
+    border-bottom: 1px solid var(--border);
+}
+.profile-section:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+.profile-section h2 {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 1.25rem;
+}
+
+.info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.9rem 1rem;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius);
+    margin-bottom: 0.5rem;
+    transition: var(--transition);
+}
+.info-row:hover { border-color: var(--purple-glow); background: var(--glass-bg-hover); }
+.info-row label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.role-badge {
+    background: var(--purple-dim);
+    border: 1px solid var(--purple-glow);
+    color: var(--purple-light);
+    padding: 0.25rem 0.75rem;
+    border-radius: var(--radius-pill);
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+/* Danger Zone */
+.danger-zone {
+    background: rgba(251,44,54,0.05);
+    padding: 2rem;
+    border-radius: var(--radius);
+    border: 1px solid rgba(251,44,54,0.18);
+}
+.danger-zone h2 { color: var(--error) !important; }
+
+.delete-account-btn {
+    background: rgba(251,44,54,0.12);
+    color: var(--error);
+    border: 1px solid rgba(251,44,54,0.3);
+    padding: 0.75rem 1.5rem;
+    border-radius: var(--radius);
+    font-weight: 700;
+    margin-top: 1rem;
+    cursor: pointer;
+    transition: var(--transition);
+}
+.delete-account-btn:hover {
+    background: rgba(251,44,54,0.22);
+    border-color: rgba(251,44,54,0.5);
+}
+
+@media (max-width: 768px) { .profile-card { padding: 2rem; } }

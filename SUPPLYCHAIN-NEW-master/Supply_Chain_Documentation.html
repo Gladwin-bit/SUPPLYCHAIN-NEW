@@ -1,0 +1,923 @@
+
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="UTF-8">
+        <title>Kasaragod Handloom Supply Chain System - Documentation</title>
+        
+    <style>
+    body {
+        font-family: 'Segoe UI', Arial, sans-serif;
+        line-height: 1.6;
+        margin: 2cm;
+        color: #333;
+        font-size: 11pt;
+    }
+
+    h1 {
+        color: #2c5aa0;
+        border-bottom: 3px solid #2c5aa0;
+        padding-bottom: 0.5em;
+        font-size: 24pt;
+        margin-top: 1.5em;
+        page-break-before: always;
+    }
+
+    h1:first-child {
+        page-break-before: avoid;
+    }
+
+    h2 {
+        color: #34495e;
+        border-bottom: 2px solid #e74c3c;
+        padding-bottom: 0.3em;
+        margin-top: 1.2em;
+        font-size: 18pt;
+    }
+
+    h3 {
+        color: #27ae60;
+        margin-top: 1em;
+        font-size: 14pt;
+    }
+
+    h4 {
+        color: #8e44ad;
+        font-size: 12pt;
+    }
+
+    code {
+        background-color: #f4f4f4;
+        padding: 2px 4px;
+        border-radius: 3px;
+        font-family: 'Courier New', monospace;
+        font-size: 9pt;
+    }
+
+    pre {
+        background-color: #2c3e50;
+        color: #ecf0f1;
+        padding: 1em;
+        border-radius: 5px;
+        overflow-x: auto;
+        font-family: 'Courier New', monospace;
+        font-size: 9pt;
+        margin: 1em 0;
+        page-break-inside: avoid;
+    }
+
+    blockquote {
+        border-left: 4px solid #3498db;
+        margin: 1em 0;
+        padding-left: 1em;
+        color: #555;
+        font-style: italic;
+    }
+
+    table {
+        border-collapse: collapse;
+        width: 100%;
+        margin: 1em 0;
+        font-size: 10pt;
+        page-break-inside: avoid;
+    }
+
+    table, th, td {
+        border: 1px solid #ddd;
+    }
+
+    th {
+        background-color: #34495e;
+        color: white;
+        padding: 8px;
+        text-align: left;
+    }
+
+    td {
+        padding: 8px;
+    }
+
+    .test-case {
+        background-color: #f8f9fa;
+        border: 1px solid #e9ecef;
+        border-radius: 5px;
+        padding: 1em;
+        margin: 1em 0;
+        page-break-inside: avoid;
+    }
+
+    .pass-criteria {
+        background-color: #d4edda;
+        border: 1px solid #c3e6cb;
+        border-radius: 5px;
+        padding: 0.5em;
+        margin: 0.5em 0;
+    }
+
+    .security-feature {
+        background-color: #fff3cd;
+        border: 1px solid #ffeaa7;
+        border-radius: 5px;
+        padding: 0.5em;
+        margin: 0.5em 0;
+        page-break-inside: avoid;
+    }
+
+    .flow-diagram {
+        font-family: 'Courier New', monospace;
+        background-color: #f1f3f4;
+        padding: 1em;
+        border-radius: 5px;
+        margin: 1em 0;
+        font-size: 9pt;
+        white-space: pre;
+        page-break-inside: avoid;
+    }
+
+    .anti-counterfeit {
+        background-color: #ffeef0;
+        border: 2px solid #e74c3c;
+        border-radius: 8px;
+        padding: 1em;
+        margin: 1em 0;
+        page-break-inside: avoid;
+    }
+
+    /* Print-specific styles */
+    @media print {
+        body { margin: 1.5cm; font-size: 10pt; }
+        h1 { font-size: 20pt; }
+        h2 { font-size: 16pt; }
+        h3 { font-size: 13pt; }
+        h4 { font-size: 11pt; }
+    }
+
+    /* Status indicators */
+    .status-pass { color: #27ae60; font-weight: bold; }
+    .status-fail { color: #e74c3c; font-weight: bold; }
+    .status-warn { color: #f39c12; font-weight: bold; }
+
+    /* Header styling */
+    .header {
+        text-align: center;
+        border-bottom: 2px solid #2c5aa0;
+        padding-bottom: 1em;
+        margin-bottom: 2em;
+    }
+
+    .header h1 {
+        color: #2c5aa0;
+        margin: 0;
+        border: none;
+        page-break-before: avoid;
+    }
+
+    .header p {
+        color: #666;
+        font-style: italic;
+        margin: 0.5em 0;
+    }
+
+    /* Table of contents */
+    .toc {
+        background-color: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 5px;
+        padding: 1em;
+        margin: 1em 0 2em 0;
+    }
+
+    .toc h2 {
+        margin-top: 0;
+        color: #495057;
+        border: none;
+        font-size: 16pt;
+    }
+
+    .toc ul {
+        list-style-type: none;
+        padding-left: 0;
+    }
+
+    .toc li {
+        margin: 0.3em 0;
+        padding-left: 1em;
+    }
+
+    .toc a {
+        text-decoration: none;
+        color: #007bff;
+    }
+
+    .toc a:hover {
+        text-decoration: underline;
+    }
+    </style>
+    
+    </head>
+    <body>
+        
+    <div class="header">
+        <h1>Kasaragod Handloom Supply Chain System</h1>
+        <h2>Test Cases, Flow Diagrams & Anti-Counterfeiting Documentation</h2>
+        <p>Version 1.0 | Generated: March 14, 2026</p>
+        <p>Blockchain-based Authenticity & Provenance Tracking Platform</p>
+    </div>
+    
+        <h1 id="kasaragod-handloom-supply-chain-system">Kasaragod Handloom Supply Chain System</h1>
+<h2 id="test-cases-flow-diagrams-anti-counterfeiting-documentation">Test Cases, Flow Diagrams &amp; Anti-Counterfeiting Documentation</h2>
+<hr />
+<h2 id="table-of-contents">Table of Contents</h2>
+<ol>
+<li><a href="#system-overview">System Overview</a></li>
+<li><a href="#test-cases">Test Cases</a></li>
+<li><a href="#single-saree-registration-test-case">Single Saree Registration</a></li>
+<li><a href="#bulk-saree-registration-test-case">Bulk Saree Registration</a></li>
+<li><a href="#consumer-verification-test-case">Consumer Verification</a></li>
+<li><a href="#b2b-custody-transfer-test-case">B2B Custody Transfer</a></li>
+<li><a href="#flow-diagrams">Flow Diagrams</a></li>
+<li><a href="#anti-counterfeiting-architecture">Anti-Counterfeiting Architecture</a></li>
+<li><a href="#security-features">Security Features</a></li>
+<li><a href="#system-features">System Features</a></li>
+</ol>
+<hr />
+<h2 id="system-overview">System Overview</h2>
+<p>The Kasaragod Handloom Supply Chain System is a blockchain-based authenticity and provenance tracking platform designed specifically for handwoven sarees. It provides end-to-end traceability from weaver to consumer while implementing multiple layers of anti-counterfeiting protection.</p>
+<h3 id="technology-stack">Technology Stack</h3>
+<ul>
+<li><strong>Blockchain</strong>: Ethereum-compatible smart contracts (Solidity)</li>
+<li><strong>Frontend</strong>: React.js with MetaMask integration</li>
+<li><strong>Backend</strong>: Node.js with MongoDB</li>
+<li><strong>Storage</strong>: IPFS for certificates, local storage for metadata</li>
+</ul>
+<hr />
+<h2 id="test-cases">Test Cases</h2>
+<h3 id="single-saree-registration-test-case">Single Saree Registration Test Case</h3>
+<h4 id="test-case-id-tc001">Test Case ID: TC001</h4>
+<p><strong>Objective</strong>: Verify that a manufacturer can successfully register a single saree with unique identifiers and security features.</p>
+<h4 id="preconditions">Preconditions:</h4>
+<ul>
+<li>MetaMask connected to localhost:8545 (Hardhat network)</li>
+<li>User wallet has MANUFACTURER_ROLE granted</li>
+<li>Backend server running on localhost:5000</li>
+<li>Valid certificate file (PDF/PNG/JPG) prepared</li>
+</ul>
+<h4 id="test-steps">Test Steps:</h4>
+<ol>
+<li><strong>Navigate to Registration Page</strong></li>
+<li>Go to <code>/create</code></li>
+<li>
+<p>Verify "Single Mode" badge is displayed</p>
+</li>
+<li>
+<p><strong>Fill Basic Information (Tab 1)</strong></p>
+</li>
+<li><strong>Saree Name</strong>: "Kasaragod Traditional Silk #001"</li>
+<li><strong>Loom Location</strong>: "Kasaragod Unit 4, Loom 12"</li>
+<li><strong>Date of Weaving</strong>: "2026-03-14"</li>
+<li>
+<p>Click "Next" to proceed</p>
+</li>
+<li>
+<p><strong>Add Materials Information (Tab 2)</strong></p>
+</li>
+<li><strong>Thread Supplier</strong>: "Kerala Silk Threads Pvt Ltd"</li>
+<li><strong>Thread Type</strong>: "Pure Silk"</li>
+<li><strong>Thread Colors</strong>: "Golden Yellow, Deep Red"</li>
+<li><strong>Dye Supplier</strong>: "Natural Dyes Co."</li>
+<li><strong>Dye Color Code</strong>: "NYD-001"</li>
+<li>
+<p>Click "Next" to proceed</p>
+</li>
+<li>
+<p><strong>Keys &amp; Certificate (Tab 3)</strong></p>
+</li>
+<li>Verify auto-generated <strong>Consumer Scratch Code</strong>: Format <code>XXXX-XXXX-XXXX-XXXX</code></li>
+<li>Verify auto-generated <strong>Handover Key</strong>: Format <code>XXXXXXXX</code></li>
+<li>Upload certificate file</li>
+<li><strong>First Recipient Email</strong>: "cooperative@kasaragod.com"</li>
+<li>
+<p>Click "Register Saree on Blockchain"</p>
+</li>
+<li>
+<p><strong>Blockchain Transaction</strong></p>
+</li>
+<li>Confirm MetaMask transaction</li>
+<li>Wait for transaction confirmation</li>
+<li>Verify transaction hash is displayed</li>
+</ol>
+<h4 id="expected-results">Expected Results:</h4>
+<p>✅ <strong>Success Overlay Displayed</strong>
+- Product ID assigned (e.g., #42)
+- QR code generated with <code>{productId: 42, secretCode: "XXXX-XXXX-XXXX-XXXX"}</code>
+- Consumer scratch code and handover key displayed
+- Transaction hash shown</p>
+<p>✅ <strong>Blockchain Verification</strong></p>
+<pre><code class="language-javascript">// Smart contract state verification
+await contract.getProduct(42);
+// Returns: {
+//   id: 42,
+//   name: &quot;Kasaragod Traditional Silk #001&quot;,
+//   currentOwner: &quot;0xf39F...2266&quot;,
+//   state: 0, // Created
+//   consumerSecretHash: &quot;0xabc123...&quot;, // keccak256(scratchCode)
+//   currentHandoverHash: &quot;0xdef456...&quot;, // keccak256(handoverKey)
+//   exists: true
+// }
+</code></pre>
+<p>✅ <strong>Email Sent</strong>
+- Handover key emailed to cooperative@kasaragod.com</p>
+<p>✅ <strong>Downloads Available</strong>
+- Product QR code PNG
+- Waybill with handover key</p>
+<h4 id="pass-criteria">Pass Criteria:</h4>
+<ul>
+<li>Transaction successfully mined with gas &lt; 500,000</li>
+<li>Product retrievable from blockchain with correct data</li>
+<li>QR code scannable and contains valid JSON</li>
+<li>All security hashes properly set on-chain</li>
+</ul>
+<hr />
+<h3 id="bulk-saree-registration-test-case">Bulk Saree Registration Test Case</h3>
+<h4 id="test-case-id-tc002">Test Case ID: TC002</h4>
+<p><strong>Objective</strong>: Verify that a manufacturer can register multiple sarees in a single blockchain transaction with individual security features.</p>
+<h4 id="preconditions_1">Preconditions:</h4>
+<ul>
+<li>Same as TC001</li>
+<li>Sufficient gas limit for bulk transaction (estimated: 2M - 5M gas)</li>
+</ul>
+<h4 id="test-steps_1">Test Steps:</h4>
+<ol>
+<li><strong>Navigate to Bulk Registration</strong></li>
+<li>Go to <code>/create-bulk</code></li>
+<li>
+<p>Verify "Bulk Registry — Blockchain Batch Mode" header</p>
+</li>
+<li>
+<p><strong>Fill Batch Details</strong></p>
+</li>
+<li><strong>Batch Name</strong>: "Kasaragod Cotton — April 2026 Batch A"</li>
+<li><strong>Loom Location</strong>: "Kasaragod Unit 4"</li>
+<li><strong>Date of Weaving</strong>: "2026-03-14"</li>
+<li><strong>Quantity</strong>: 5</li>
+<li>Verify auto-generated <strong>Batch Handover Key</strong>: Format <code>XXXXXXXX</code></li>
+<li>Upload master certificate</li>
+<li>
+<p><strong>First Recipient Email</strong>: "distributor@kasaragod.com"</p>
+</li>
+<li>
+<p><strong>Submit Registration</strong></p>
+</li>
+<li>Click "Register 5 Sarees on Blockchain"</li>
+<li>
+<p>Confirm MetaMask transaction</p>
+</li>
+<li>
+<p><strong>Monitor Loading Process</strong></p>
+</li>
+<li>Certificate upload: ✅</li>
+<li>Generating 5 unique codes: ✅</li>
+<li>Blockchain submission: ✅</li>
+<li>Database sync: ✅</li>
+</ol>
+<h4 id="expected-results_1">Expected Results:</h4>
+<p>✅ <strong>Batch Successfully Created</strong>
+- <strong>Batch ID</strong>: #3
+- <strong>Product IDs</strong>: [43, 44, 45, 46, 47]
+- <strong>Individual Names</strong>: "Kasaragod Cotton — April 2026 Batch A #001" through "#005"</p>
+<p>✅ <strong>Security Verification</strong></p>
+<pre><code class="language-javascript">// Each product has unique consumer secret hash
+await contract.getProduct(43); // consumerSecretHash: &quot;0x111...&quot;
+await contract.getProduct(44); // consumerSecretHash: &quot;0x222...&quot; (different!)
+await contract.getProduct(45); // consumerSecretHash: &quot;0x333...&quot; (different!)
+
+// All products share the same batch handover hash
+await contract.getProduct(43); // currentHandoverHash: &quot;0xbatch123...&quot;
+await contract.getProduct(44); // currentHandoverHash: &quot;0xbatch123...&quot; (same)
+await contract.getProduct(45); // currentHandoverHash: &quot;0xbatch123...&quot; (same)
+
+// Batch exists and links to products
+await contract.batches(3);
+// Returns: { id: 3, currentOwner: &quot;0xf39...&quot;, exists: true, isActive: true }
+</code></pre>
+<p>✅ <strong>Results Panel</strong>
+- <strong>Batch Waybill QR</strong>: Contains <code>{type: "BATCH_WAYBILL", batchId: 3, handoverKey: "ABC12345", ...}</code>
+- <strong>Individual Product Grid</strong>: 5 items, each with unique scratch-off code (hidden by default)
+- <strong>ZIP Download</strong>: Contains batch_waybill_qr.png + 5 consumer QR codes + CSV + README</p>
+<p>✅ <strong>ZIP Contents Verification</strong></p>
+<pre><code>batch_3_export.zip
+├── batch_waybill_qr.png          # B2B custody transfer QR
+├── consumer_qrcodes/
+│   ├── product_43_qr.png         # {&quot;productId&quot;:43,&quot;secretCode&quot;:&quot;AAAA-BBBB-CCCC-DDDD&quot;}
+│   ├── product_44_qr.png         # {&quot;productId&quot;:44,&quot;secretCode&quot;:&quot;EEEE-FFFF-GGGG-HHHH&quot;}
+│   └── ...
+├── batch_data.csv                # All product IDs + scratch codes for printing
+└── README.txt                    # Security instructions
+</code></pre>
+<h4 id="pass-criteria_1">Pass Criteria:</h4>
+<ul>
+<li>Single transaction creates 5 unique products + 1 batch</li>
+<li>Each product has different <code>consumerSecretHash</code> (anti-counterfeiting)</li>
+<li>All products share same <code>currentHandoverHash</code> (batch logistics)</li>
+<li>ZIP contains correct number of individual QR codes</li>
+<li>CSV data matches blockchain records</li>
+</ul>
+<hr />
+<h3 id="consumer-verification-test-case">Consumer Verification Test Case</h3>
+<h4 id="test-case-id-tc003">Test Case ID: TC003</h4>
+<p><strong>Objective</strong>: Verify that a consumer can authenticate a saree using the scratch-off code without making a blockchain transaction.</p>
+<h4 id="preconditions_2">Preconditions:</h4>
+<ul>
+<li>Product registered (from TC001 or TC002)</li>
+<li>Consumer has physical saree with QR code and scratch-off label</li>
+<li>Consumer accesses <code>/verify</code> page (no MetaMask required)</li>
+</ul>
+<h4 id="test-steps_2">Test Steps:</h4>
+<ol>
+<li><strong>Navigate to Verify Page</strong></li>
+<li>Go to <code>/verify</code></li>
+<li>
+<p>Note: No wallet connection required for verification</p>
+</li>
+<li>
+<p><strong>Method 1: QR Code Scan</strong></p>
+</li>
+<li>Click "Identity Scan (QR)" tab</li>
+<li>Upload product QR code image</li>
+<li>
+<p>System auto-extracts: <code>{productId: 42, secretCode: "XXXX-XXXX-XXXX-XXXX"}</code></p>
+</li>
+<li>
+<p><strong>Method 2: Manual Entry</strong></p>
+</li>
+<li>Click "Manual Audit" tab</li>
+<li>Upload waybill QR (if available) to get product ID</li>
+<li>Enter product ID: "42"</li>
+<li>
+<p>Enter scratch-off code found under label: "XXXX-XXXX-XXXX-XXXX"</p>
+</li>
+<li>
+<p><strong>Verification Process</strong></p>
+</li>
+<li>Click "Verify Authenticity"</li>
+<li>System computes: <code>keccak256("XXXX-XXXX-XXXX-XXXX")</code></li>
+<li>Blockchain lookup: <code>contract.getProduct(42).consumerSecretHash</code></li>
+<li>Hash comparison performed client-side</li>
+</ol>
+<h4 id="expected-results_2">Expected Results:</h4>
+<p>✅ <strong>Authentic Product</strong></p>
+<pre><code>Status: AUTHENTICITY VERIFIED ✓
+Product ID: 42
+Name: Kasaragod Traditional Silk #001
+Weave Date: March 14, 2026
+Loom: Kasaragod Unit 4, Loom 12
+Manufacturer: 0xf39F...2266
+</code></pre>
+<p>✅ <strong>Product Timeline</strong>
+- Created: March 14, 2026 by Manufacturer
+- Current Status: Available for Purchase
+- Chain of Custody: Manufacturer → (awaiting next step)</p>
+<p>❌ <strong>Counterfeit Detection</strong>
+- Wrong scratch code → "VERIFICATION FAILED ❌"
+- Non-existent product ID → "Product not found"
+- Already claimed product → "ALREADY CLAIMED by [CustomerName]"</p>
+<h4 id="pass-criteria_2">Pass Criteria:</h4>
+<ul>
+<li>Correct code → Instant verification success</li>
+<li>Incorrect code → Clear rejection message</li>
+<li>No gas costs for verification</li>
+<li>Product history accurately displayed</li>
+</ul>
+<hr />
+<h3 id="b2b-custody-transfer-test-case">B2B Custody Transfer Test Case</h3>
+<h4 id="test-case-id-tc004">Test Case ID: TC004</h4>
+<p><strong>Objective</strong>: Verify secure custody transfer between manufacturer and cooperative using rolling handover keys.</p>
+<h4 id="preconditions_3">Preconditions:</h4>
+<ul>
+<li>Product/batch registered by manufacturer</li>
+<li>Cooperative has received handover key via email or waybill QR</li>
+<li>Cooperative wallet has COOPERATIVE_ROLE granted</li>
+</ul>
+<h4 id="test-steps_3">Test Steps:</h4>
+<ol>
+<li><strong>Cooperative Receives Handover</strong></li>
+<li>Go to <code>/custody</code></li>
+<li>
+<p>Switch to "Single Transfer" or "Bulk Transfer" tab</p>
+</li>
+<li>
+<p><strong>QR Waybill Method</strong></p>
+</li>
+<li>Upload waybill QR code image</li>
+<li>System auto-extracts: <code>{productId: 42, handoverKey: "ABC12345", senderAddress: "0xf39..."}</code></li>
+<li>
+<p>Verify sender matches current owner on blockchain</p>
+</li>
+<li>
+<p><strong>Manual Entry Method</strong></p>
+</li>
+<li>Enter Product ID: "42"</li>
+<li>Enter current handover key: "ABC12345"</li>
+<li>
+<p>Enter location: "Kasaragod Cooperative Center"</p>
+</li>
+<li>
+<p><strong>Transfer Execution</strong></p>
+</li>
+<li>System auto-generates new handover key: "XYZ98765"</li>
+<li>Click "Transfer Custody"</li>
+<li>
+<p>Confirm MetaMask transaction</p>
+</li>
+<li>
+<p><strong>Rolling Key Update</strong></p>
+</li>
+<li>Blockchain call: <code>transferCustody(42, "ABC12345", keccak256("XYZ98765"), "Kasaragod Cooperative Center")</code></li>
+<li>Old key "ABC12345" becomes invalid</li>
+<li>New hash <code>keccak256("XYZ98765")</code> stored on-chain</li>
+</ol>
+<h4 id="expected-results_3">Expected Results:</h4>
+<p>✅ <strong>Successful Transfer</strong></p>
+<pre><code class="language-javascript">// Blockchain state after transfer
+await contract.getProduct(42);
+// Returns: {
+//   currentOwner: &quot;0xCooperative123...&quot;, // Updated
+//   state: 1, // Verified (if cooperative calls verifyProduct)
+//   currentHandoverHash: &quot;0xnewHash789...&quot;, // Updated
+//   history: [
+//     {actor: &quot;0xf39F...2266&quot;, state: 0, location: &quot;Kasaragod Unit 4&quot;},
+//     {actor: &quot;0xCooperative123...&quot;, state: 1, location: &quot;Kasaragod Cooperative Center&quot;}
+//   ]
+// }
+</code></pre>
+<p>✅ <strong>Security Enforcement</strong>
+- Old key "ABC12345" can never be used again
+- Only cooperative can initiate next transfer with "XYZ98765"
+- Unauthorized party with old key → transaction reverts</p>
+<p>✅ <strong>New Waybill Generated</strong>
+- Download new waybill QR with latest handover key
+- Email new key to next recipient (distributor)</p>
+<h4 id="pass-criteria_3">Pass Criteria:</h4>
+<ul>
+<li>Custody successfully transferred on-chain</li>
+<li>Product state updated (Created → Verified)</li>
+<li>Old handover key permanently invalidated</li>
+<li>New handover key ready for next transfer</li>
+</ul>
+<hr />
+<h2 id="flow-diagrams">Flow Diagrams</h2>
+<h3 id="1-single-saree-registration-flow">1. Single Saree Registration Flow</h3>
+<pre><code>[Manufacturer]
+      ↓
+[Fill Details: Name, Loom, Date]
+      ↓
+[Generate Scratch Code + Handover Key]
+      ↓
+[Upload Certificate → IPFS/Server]
+      ↓
+[Hash Secrets: keccak256(codes)]
+      ↓
+[📝 Smart Contract: createProduct()]
+      ↓
+[⛓️ Blockchain Transaction Mined]
+      ↓
+[💾 Save to MongoDB (optional)]
+      ↓
+[📧 Email Handover Key to Recipient]
+      ↓
+[📱 Generate QR Codes + Waybill]
+      ↓
+[✅ Product Ready for Chain of Custody]
+</code></pre>
+<h3 id="2-bulk-saree-registration-flow">2. Bulk Saree Registration Flow</h3>
+<pre><code>[Manufacturer]
+      ↓
+[Batch Details: Name, Loom, Date, Quantity=N]
+      ↓
+[Generate N Unique Scratch Codes + 1 Shared Handover Key]
+      ↓
+[Upload Master Certificate]
+      ↓
+[Hash N Consumer Secrets + 1 Handover Key]
+      ↓
+[📝 Smart Contract: createProductsBulk()]
+      ↓
+[⛓️ Single Transaction: N Products + 1 Batch]
+      ↓
+[💾 Save Batch + Products to MongoDB]
+      ↓
+[📧 Email Shared Handover Key]
+      ↓
+[📦 Generate ZIP: N Consumer QRs + 1 Batch Waybill + CSV]
+      ↓
+[✅ N Products Ready for Chain of Custody]
+</code></pre>
+<h3 id="3-consumer-verification-flow">3. Consumer Verification Flow</h3>
+<pre><code>[Consumer Gets Physical Saree]
+      ↓
+[Scans Product QR Code OR Enters Manual Info]
+      ↓
+[Extract: productId + secretCode]
+      ↓
+[🧮 Client-side: hash = keccak256(secretCode)]
+      ↓
+[🔍 Blockchain Read: contract.getProduct(productId)]
+      ↓
+[Compare: hash === record.consumerSecretHash ?]
+      ↓
+╭─── YES: AUTHENTIC ✅               NO: COUNTERFEIT ❌ ───╮
+│                                                        │
+│ [Display: Product Details,         [Display: VERIFICATION │
+│  Weave Date, Manufacturer,          FAILED - Invalid Code] │
+│  Chain of Custody]                                     │
+│         ↓                                              │
+│ [Optional: Claim Ownership]                            │
+│         ↓                                              │
+│ [📝 Smart Contract: claimOwnership()]                  │
+│         ↓                                              │
+│ [State: Sold, Customer Recorded]                       │
+╰────────────────────────────────────────────────────────╯
+</code></pre>
+<h3 id="4-b2b-custody-transfer-flow">4. B2B Custody Transfer Flow</h3>
+<pre><code>[Current Owner Has Product + Handover Key]
+      ↓
+[Generate Waybill QR: {productId, handoverKey, senderAddress}]
+      ↓
+[📧 Send Waybill to Next Recipient]
+      ↓
+[Recipient Scans QR on /custody Page]
+      ↓
+[System Auto-fills: Product ID + Incoming Key]
+      ↓
+[System Generates NEW Handover Key for Next Transfer]
+      ↓
+[📝 Smart Contract: transferCustody(id, oldKey, newKeyHash, location)]
+      ↓
+[⛓️ Blockchain Verification &amp; State Update]
+╭─────────────────────────────────────────╮
+│ ✅ SUCCESS:                             │
+│ • currentOwner → updated                │
+│ • currentHandoverHash → newKeyHash      │
+│ • state → updated (Created→Verified)    │
+│ • history[] → new entry added           │
+│ • oldKey → permanently invalidated      │
+╰─────────────────────────────────────────╯
+      ↓
+[New Waybill Generated for Next Hop]
+      ↓
+[📧 Email New Key to Next Recipient]
+</code></pre>
+<hr />
+<h2 id="anti-counterfeiting-architecture">Anti-Counterfeiting Architecture</h2>
+<h3 id="multi-layer-security-system">Multi-Layer Security System</h3>
+<h4 id="layer-1-unique-blockchain-identity">Layer 1: Unique Blockchain Identity</h4>
+<pre><code>Each Saree Gets:
+├── Unique Product ID (auto-incremented, immutable)
+├── Unique Consumer Secret Hash (keccak256, stored on-chain)
+├── Shared Batch Handover Hash (for bulk logistics)
+└── Immutable Creation Timestamp
+</code></pre>
+<h4 id="layer-2-cryptographic-verification">Layer 2: Cryptographic Verification</h4>
+<pre><code>Consumer Verification Process:
+┌─────────────────────────────────────────┐
+│ Physical Saree                          │
+│ ┌─────────────────┐  ┌─────────────────┐│
+│ │    QR Code      │  │ Scratch-off     ││
+│ │ {productId: 42, │  │ Label:          ││
+│ │  secretCode:    │  │ &quot;A1B2-C3D4-     ││
+│ │  &quot;A1B2-C3D4-    │  │  E5F6-G7H8&quot;     ││
+│ │   E5F6-G7H8&quot;}   │  │ (Hidden)        ││
+│ └─────────────────┘  └─────────────────┘│
+└─────────────────────────────────────────┘
+           ↓
+┌─────────────────────────────────────────┐
+│ Buyer Verification                      │
+│ 1. Scan QR → Get Product ID + Secret   │
+│ 2. hash = keccak256(&quot;A1B2-C3D4-E5F6-G7H8&quot;)│
+│ 3. Blockchain: getProduct(42)          │
+│ 4. Compare: hash === storedHash         │
+│ 5. Result: AUTHENTIC ✅ or FAKE ❌      │
+└─────────────────────────────────────────┘
+</code></pre>
+<h4 id="layer-3-rolling-handover-keys-b2b-security">Layer 3: Rolling Handover Keys (B2B Security)</h4>
+<pre><code>B2B Chain of Custody:
+Manufacturer → Cooperative → Distributor → Retailer
+
+Step 1: Manufacturer has Key1
+        └─ Blockchain: currentHandoverHash = keccak256(Key1)
+
+Step 2: Transfer to Cooperative
+        ├─ Cooperative provides Key1 to prove ownership
+        ├─ Smart contract verifies: keccak256(Key1) === currentHandoverHash
+        ├─ Generates Key2, stores keccak256(Key2) on-chain
+        └─ Key1 becomes permanently invalid ❌
+
+Step 3: Transfer to Distributor
+        ├─ Cooperative provides Key2
+        ├─ Generates Key3, invalidates Key2
+        └─ Process repeats...
+
+🛡️ Security: Old keys cannot be reused, preventing replay attacks
+</code></pre>
+<h4 id="layer-4-immutable-audit-trail">Layer 4: Immutable Audit Trail</h4>
+<pre><code>Blockchain History (cannot be tampered):
+┌──────────────────────────────────────────────────────────────┐
+│ Product #42 Timeline                                         │
+│ ┌─────────────┬─────────────────┬──────────────┬────────────┐│
+│ │ Timestamp   │ Actor           │ State        │ Location   ││
+│ ├─────────────┼─────────────────┼──────────────┼────────────┤│
+│ │ 2026-03-14  │ 0xf39F...2266   │ Created      │ Unit 4     ││
+│ │ 2026-03-15  │ 0xabc1...5678   │ Verified     │ Coop Center││
+│ │ 2026-03-16  │ 0xdef9...4321   │ InTransit    │ Warehouse  ││
+│ │ 2026-03-17  │ 0x123a...7890   │ AtShop       │ Retail     ││
+│ │ 2026-03-18  │ 0xcustomer...   │ Sold         │ Bangalore  ││
+│ └─────────────┴─────────────────┴──────────────┴────────────┘│
+└──────────────────────────────────────────────────────────────┘
+
+🛡️ Every state change is permanently recorded
+🛡️ Cannot be deleted or modified after mining
+🛡️ Full provenance from loom to customer
+</code></pre>
+<h3 id="counterfeit-detection-mechanisms">Counterfeit Detection Mechanisms</h3>
+<h4 id="1-fake-qr-codes">1. Fake QR Codes</h4>
+<pre><code>❌ Attacker creates fake QR: {&quot;productId&quot;: 999, &quot;secretCode&quot;: &quot;FAKE-CODE&quot;}
+└─ Consumer scans → Product 999 doesn't exist on blockchain → REJECTED
+</code></pre>
+<h4 id="2-cloned-qr-codes">2. Cloned QR Codes</h4>
+<pre><code>❌ Attacker copies real QR from legitimate saree
+├─ First buyer scans → AUTHENTIC, claims ownership
+└─ Second buyer scans same QR → &quot;ALREADY CLAIMED&quot; → CAUGHT
+</code></pre>
+<h4 id="3-modified-scratch-codes">3. Modified Scratch Codes</h4>
+<pre><code>❌ Attacker tries different scratch codes on real product
+├─ Product 42 exists, but wrong secret
+├─ keccak256(&quot;WRONG-CODE&quot;) ≠ storedHash
+└─ &quot;VERIFICATION FAILED&quot; → CAUGHT
+</code></pre>
+<h4 id="4-replay-attacks-in-b2b-chain">4. Replay Attacks in B2B Chain</h4>
+<pre><code>❌ Malicious actor intercepts old handover key
+├─ Tries to use expired Key1 after Key2 is active
+├─ Smart contract: keccak256(Key1) ≠ currentHandoverHash
+└─ Transaction reverts → BLOCKED
+</code></pre>
+<h4 id="5-counterfeit-batch-certification">5. Counterfeit Batch Certification</h4>
+<pre><code>❌ Fake manufacturer tries to register products
+├─ Wallet lacks MANUFACTURER_ROLE
+├─ Smart contract: hasRole(MANUFACTURER_ROLE, msg.sender) → false
+└─ Transaction reverts → BLOCKED
+</code></pre>
+<hr />
+<h2 id="security-features">Security Features</h2>
+<h3 id="1-role-based-access-control-rbac">1. Role-Based Access Control (RBAC)</h3>
+<pre><code class="language-solidity">// Smart Contract Roles
+bytes32 public constant MANUFACTURER_ROLE = keccak256(&quot;MANUFACTURER&quot;);
+bytes32 public constant COOPERATIVE_ROLE  = keccak256(&quot;COOPERATIVE&quot;);
+bytes32 public constant DISTRIBUTOR_ROLE  = keccak256(&quot;DISTRIBUTOR&quot;);
+bytes32 public constant SHOP_ROLE         = keccak256(&quot;SHOP&quot;);
+
+// Function Protection
+function createProduct(...) public onlyRole(MANUFACTURER_ROLE) { ... }
+function verifyProduct(...) public onlyRole(COOPERATIVE_ROLE) { ... }
+function transferCustody(...) public {
+    require(hasAnyRole(msg.sender)); // Only registered participants
+}
+</code></pre>
+<h3 id="2-digital-signature-verification">2. Digital Signature Verification</h3>
+<pre><code class="language-javascript">// Certificate Upload Process
+1. User uploads PDF certificate
+2. Backend validates digital signature:
+   - extractSignature(pdfFile)
+   - verifySignature(signature, publicKey, document)
+   - Only proceeds if signature === VALID
+3. Certificate stored with verified status
+</code></pre>
+<h3 id="3-geolocation-tracking">3. Geolocation Tracking</h3>
+<pre><code class="language-javascript">// Customer Ownership Claim
+function claimOwnership(uint productId, string memory secretCode,
+                       string memory customerName, string memory location) {
+    // location format: &quot;lat,lng|City, State, Country&quot;
+    // Example: &quot;12.9716,77.5946|Bangalore, Karnataka, India&quot;
+}
+</code></pre>
+<h3 id="4-gas-optimization-rate-limiting">4. Gas Optimization &amp; Rate Limiting</h3>
+<pre><code class="language-javascript">// Bulk Registration Efficiency
+Single Registration: ~400,000 gas
+Bulk Registration (5 products): ~800,000 gas
+Efficiency Gain: 60% gas reduction per product in bulk
+
+// Smart Contract Gas Limits
+createProduct()     : 500,000 gas limit
+createProductsBulk(): 5,000,000 gas limit
+transferCustody()   : 300,000 gas limit
+</code></pre>
+<hr />
+<h2 id="system-features">System Features</h2>
+<h3 id="1-web3-integration">1. Web3 Integration</h3>
+<h4 id="metamask-connection">MetaMask Connection</h4>
+<ul>
+<li>Automatic wallet detection</li>
+<li>Network switching (localhost:8545 for development)</li>
+<li>Transaction signing and confirmation</li>
+<li>Gas estimation and fee display</li>
+</ul>
+<h4 id="smart-contract-interaction">Smart Contract Interaction</h4>
+<ul>
+<li>Read operations (no gas): Product verification, history lookup</li>
+<li>Write operations (gas required): Registration, custody transfer</li>
+<li>Event listening: Real-time updates on state changes</li>
+</ul>
+<h3 id="2-backend-services">2. Backend Services</h3>
+<h4 id="certificate-management">Certificate Management</h4>
+<pre><code>POST /api/products/upload-certificate
+├─ Multer file upload (5MB limit)
+├─ Digital signature verification
+├─ IPFS storage (future enhancement)
+└─ Returns: { success: true, filename: &quot;cert-123.pdf&quot; }
+</code></pre>
+<h4 id="email-notifications">Email Notifications</h4>
+<pre><code>POST /api/email/send-handover-key
+├─ SMTP configuration
+├─ Handover key delivery
+├─ Batch waybill distribution
+└─ Chain of custody notifications
+</code></pre>
+<h4 id="database-synchronization">Database Synchronization</h4>
+<pre><code>MongoDB Collections:
+├─ users: Registered participants with roles
+├─ products: Individual saree records
+├─ batches: Bulk registration metadata
+└─ certificates: Document verification records
+</code></pre>
+<h3 id="3-frontend-features">3. Frontend Features</h3>
+<h4 id="responsive-design">Responsive Design</h4>
+<ul>
+<li>Mobile-optimized QR code scanning</li>
+<li>Touch-friendly custody transfer interface</li>
+<li>Progressive Web App capabilities</li>
+</ul>
+<h4 id="real-time-updates">Real-time Updates</h4>
+<pre><code class="language-javascript">// Live transaction monitoring
+useEffect(() =&gt; {
+    const filter = contract.filters.ProductCreated(null, account);
+    contract.on(filter, (productId, manufacturer, event) =&gt; {
+        toast.success(`Product #${productId} registered!`);
+        updateProductList();
+    });
+}, [contract, account]);
+</code></pre>
+<h4 id="export-capabilities">Export Capabilities</h4>
+<pre><code>ZIP Export Contents:
+├─ batch_waybill_qr.png     # B2B logistics QR
+├─ consumer_qrcodes/        # Individual product QRs
+│   ├─ product_42_qr.png    # For customer verification
+│   └─ product_43_qr.png
+├─ batch_data.csv           # Label printing data
+└─ README.txt               # Security instructions
+</code></pre>
+<h3 id="4-quality-assurance">4. Quality Assurance</h3>
+<h4 id="automated-testing">Automated Testing</h4>
+<pre><code class="language-bash"># Smart Contract Tests
+npx hardhat test
+├─ SupplyChain_FullFlow.js     # End-to-end workflow
+├─ SupplyChain_Bulk.js         # Bulk registration tests
+└─ VerifyEvent.js              # Event emission verification
+
+# Frontend Tests
+npm test
+├─ Component unit tests
+├─ Hook integration tests
+└─ User interaction tests
+</code></pre>
+<h4 id="error-handling">Error Handling</h4>
+<pre><code class="language-javascript">// Graceful Degradation
+try {
+    await contract.createProduct(...);
+} catch (error) {
+    if (error.code === 'INSUFFICIENT_FUNDS') {
+        toast.error('Insufficient ETH for gas fees');
+    } else if (error.reason?.includes('MANUFACTURER_ROLE')) {
+        toast.error('Access denied - MANUFACTURER_ROLE required');
+    } else {
+        toast.error('Transaction failed - please try again');
+    }
+}
+</code></pre>
+<hr />
+<h2 id="conclusion">Conclusion</h2>
+<p>The Kasaragod Handloom Supply Chain System implements a comprehensive anti-counterfeiting solution using blockchain technology. The multi-layer security approach ensures that:</p>
+<ol>
+<li><strong>Each saree is unique</strong> - Cryptographic hashes prevent duplication</li>
+<li><strong>Chain of custody is secure</strong> - Rolling keys prevent unauthorized transfers</li>
+<li><strong>Consumers can verify authenticity</strong> - Instant, gasless verification</li>
+<li><strong>Audit trail is immutable</strong> - Complete provenance tracking</li>
+<li><strong>Access is controlled</strong> - Role-based permissions prevent unauthorized operations</li>
+</ol>
+<p>The system successfully addresses the primary counterfeiting challenges in the handloom industry while maintaining usability for all stakeholders in the supply chain.</p>
+<hr />
+<p><strong>Document Version</strong>: 1.0
+<strong>Generated</strong>: March 14, 2026
+<strong>System Version</strong>: Production Ready
+<strong>Smart Contract Address</strong>: 0x5FbDB2315678afecb367f032d93F642f64180aa3</p>
+    </body>
+    </html>
+    
