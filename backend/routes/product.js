@@ -1,40 +1,50 @@
 import express from 'express';
-import { uploadCertificate } from '../config/cloudinary.js';
+import multer from 'multer';
+import ipfsService from '../services/ipfsService.js';
 
 const router = express.Router();
 
+// Memory storage — no local disk writes, works on Railway/cloud
+const memStorage = multer.memoryStorage();
+const uploadCertificate = multer({
+    storage: memStorage,
+    limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+    fileFilter: (req, file, cb) => {
+        const allowed = ['application/pdf', 'image/png', 'image/jpeg', 'image/jpg'];
+        if (allowed.includes(file.mimetype)) {
+            cb(null, true);
+        } else {
+            cb(new Error('Only PDF and image files are allowed'));
+        }
+    }
+});
+
 /**
  * @route   POST /api/products/upload-certificate
- * @desc    Upload product certificate to Cloudinary and return URL
- * @access  Private (requires authentication)
+ * @desc    Upload product certificate to IPFS via Pinata
+ * @access  Private
  */
-router.post('/upload-certificate', uploadCertificate.single('certificate'), (req, res) => {
+router.post('/upload-certificate', uploadCertificate.single('certificate'), async (req, res) => {
     try {
         if (!req.file) {
-            return res.status(400).json({
-                success: false,
-                message: 'No file uploaded'
-            });
+            return res.status(400).json({ success: false, message: 'No file uploaded' });
         }
 
-        // Cloudinary stores the public URL in req.file.path
-        const fileUrl = req.file.path;
-        const publicId = req.file.filename;
+        // Upload buffer directly to IPFS (no disk needed)
+        const { ipfsHash, ipfsUrl, isMock } = await ipfsService.uploadFile(req.file);
 
         res.json({
             success: true,
-            filename: publicId,   // Cloudinary public_id
-            path: fileUrl,        // Full Cloudinary HTTPS URL
-            url: fileUrl,
-            message: 'Certificate uploaded successfully'
+            filename: ipfsHash,      // IPFS CID stored in MongoDB as 'filename'
+            path: ipfsUrl,           // Full gateway URL stored as 'path'
+            url: ipfsUrl,
+            ipfsHash,
+            isMock: isMock || false,
+            message: 'Certificate uploaded to IPFS successfully'
         });
     } catch (error) {
         console.error('Upload error:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Failed to upload certificate',
-            error: error.message
-        });
+        res.status(500).json({ success: false, message: 'Failed to upload certificate', error: error.message });
     }
 });
 

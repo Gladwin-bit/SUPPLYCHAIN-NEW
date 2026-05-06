@@ -5,6 +5,7 @@ import fs from 'fs';
 /**
  * IPFS Service using Pinata
  * Handles file uploads to IPFS via Pinata API
+ * Supports both in-memory buffers (cloud/Railway) and disk paths (local dev)
  */
 class IPFSService {
     constructor() {
@@ -22,51 +23,49 @@ class IPFSService {
 
     /**
      * Upload a file to IPFS via Pinata
-     * @param {Object} file - File object with path and filename
-     * @returns {Promise<Object>} Object containing ipfsHash and ipfsUrl
+     * @param {Object} file - multer file object (buffer OR path)
+     * @returns {Promise<Object>} { ipfsHash, ipfsUrl }
      */
     async uploadFile(file) {
         try {
             const pinataJWT = this.getPinataJWT();
-            const isDemoMode = process.env.DEMO_MODE === 'true' || !pinataJWT;
 
             if (!pinataJWT) {
-                if (isDemoMode) {
-                    console.warn('⚠️ PINATA_JWT not found. Running in DEMO MODE.');
-                    console.warn('   Using mock IPFS hash for local development.');
-
-                    // Artificial delay to simulate network upload
-                    await new Promise(resolve => setTimeout(resolve, 1500));
-
-                    const mockHash = `QmDEMO${Math.random().toString(36).substring(2, 12)}MOCK`;
-                    return {
-                        ipfsHash: mockHash,
-                        ipfsUrl: `${this.pinataGateway}${mockHash}`,
-                        isMock: true
-                    };
-                }
-
-                console.error('❌ PINATA_JWT not found in environment variables');
-                console.error('   Please ensure PINATA_JWT is set in backend/.env file');
-                throw new Error('Pinata JWT not configured');
+                // Demo/local mode: return a mock hash
+                console.warn('⚠️ PINATA_JWT not set — using DEMO MODE mock hash');
+                await new Promise(resolve => setTimeout(resolve, 500));
+                const mockHash = `QmDEMO${Math.random().toString(36).substring(2, 12)}MOCK`;
+                return {
+                    ipfsHash: mockHash,
+                    ipfsUrl: `${this.pinataGateway}${mockHash}`,
+                    isMock: true
+                };
             }
 
-            console.log('✅ Pinata JWT found, uploading to IPFS...');
+            console.log('✅ Uploading to IPFS via Pinata...');
 
-            // Create form data
             const formData = new FormData();
-            const fileStream = fs.createReadStream(file.path);
-            formData.append('file', fileStream, file.originalname || file.filename);
 
-            // Optional: Add metadata
-            const metadata = JSON.stringify({
-                name: file.originalname || file.filename,
+            if (file.buffer) {
+                // ✅ Cloud-safe: multer memoryStorage gives a Buffer directly
+                formData.append('file', file.buffer, {
+                    filename: file.originalname || 'certificate',
+                    contentType: file.mimetype || 'application/octet-stream'
+                });
+            } else if (file.path) {
+                // Fallback for local disk storage
+                formData.append('file', fs.createReadStream(file.path), file.originalname || file.filename);
+            } else {
+                throw new Error('File must have either a buffer or a path');
+            }
+
+            formData.append('pinataMetadata', JSON.stringify({
+                name: file.originalname || file.filename || 'certificate',
                 keyvalues: {
                     uploadedAt: new Date().toISOString(),
-                    type: 'authorization-certificate'
+                    type: 'product-certificate'
                 }
-            });
-            formData.append('pinataMetadata', metadata);
+            }));
 
             // Upload to Pinata
             const response = await axios.post(
@@ -85,10 +84,7 @@ class IPFSService {
             const ipfsHash = response.data.IpfsHash;
             const ipfsUrl = `${this.pinataGateway}${ipfsHash}`;
 
-            console.log('✅ File uploaded to IPFS');
-            console.log('   IPFS Hash:', ipfsHash);
-            console.log('   Gateway URL:', ipfsUrl);
-
+            console.log('✅ IPFS Upload complete — Hash:', ipfsHash);
             return {
                 ipfsHash,
                 ipfsUrl,
@@ -98,10 +94,9 @@ class IPFSService {
         } catch (error) {
             console.error('❌ IPFS upload error:', error.message);
             if (error.response) {
-                console.error('   Response data:', error.response.data);
-                console.error('   Response status:', error.response.status);
+                console.error('   Status:', error.response.status, error.response.data);
             }
-            throw new Error(`Failed to upload file to IPFS: ${error.message}`);
+            throw new Error(`Failed to upload to IPFS: ${error.message}`);
         }
     }
 
@@ -122,10 +117,7 @@ class IPFSService {
     async unpinFile(ipfsHash) {
         try {
             const pinataJWT = this.getPinataJWT();
-
-            if (!pinataJWT) {
-                throw new Error('Pinata JWT not configured');
-            }
+            if (!pinataJWT) throw new Error('Pinata JWT not configured');
 
             await axios.delete(
                 `https://api.pinata.cloud/pinning/unpin/${ipfsHash}`,
