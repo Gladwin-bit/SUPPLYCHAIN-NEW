@@ -26,8 +26,23 @@ const __dirname = dirname(__filename);
 const app = express();
 
 // Middleware
+const allowedOrigins = [
+    'http://localhost:3000',
+    'http://localhost:5000',
+    process.env.FRONTEND_URL,
+    'https://kasargod-sarees.vercel.app'
+].filter(Boolean);
+
 app.use(cors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    origin: (origin, callback) => {
+        // Allow requests with no origin (Postman, mobile apps, server-to-server)
+        if (!origin) return callback(null, true);
+        // Allow any vercel.app subdomain (handles preview deployments)
+        if (origin.endsWith('.vercel.app')) return callback(null, true);
+        // Allow explicitly listed origins
+        if (allowedOrigins.includes(origin)) return callback(null, true);
+        callback(new Error(`CORS: origin ${origin} not allowed`));
+    },
     credentials: true
 }));
 
