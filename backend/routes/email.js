@@ -30,8 +30,8 @@ router.post('/send-handover-key', async (req, res) => {
         }
 
         // Check email config is set
-        if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-            console.error('EMAIL_USER or EMAIL_PASS not configured in .env');
+        if (!process.env.BREVO_API_KEY && !process.env.EMAIL_USER) {
+            console.error('Email credentials (BREVO_API_KEY or EMAIL_USER) not configured in environment');
             return res.status(500).json({
                 success: false,
                 message: 'Email service is not configured on the server'
@@ -82,8 +82,8 @@ router.post('/send-batch-handover-key', async (req, res) => {
         }
 
         // Check email config is set
-        if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-            console.error('EMAIL_USER or EMAIL_PASS not configured in .env');
+        if (!process.env.BREVO_API_KEY && !process.env.EMAIL_USER) {
+            console.error('Email credentials (BREVO_API_KEY or EMAIL_USER) not configured in environment');
             return res.status(500).json({
                 success: false,
                 message: 'Email service is not configured on the server'

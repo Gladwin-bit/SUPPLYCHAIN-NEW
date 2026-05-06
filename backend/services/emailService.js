@@ -1,4 +1,4 @@
-import { Resend } from 'resend';
+import https from 'https';
 import nodemailer from 'nodemailer';
 
 /**
@@ -13,38 +13,41 @@ const sendEmail = async ({ to, subject, html, text }) => {
     throw new Error('BREVO_API_KEY is not configured in environment variables. Please add it to Railway.');
   }
 
-  const payload = {
-    sender: {
-      name: "Kasaragod Sarees",
-      email: senderEmail
-    },
-    to: [
-      { email: to }
-    ],
+  const payload = JSON.stringify({
+    sender: { name: "Kasaragod Sarees", email: senderEmail },
+    to: [{ email: to }],
     subject: subject,
     htmlContent: html,
     textContent: text
-  };
-
-  const response = await fetch('https://api.brevo.com/v3/smtp/email', {
-    method: 'POST',
-    headers: {
-      'accept': 'application/json',
-      'api-key': apiKey,
-      'content-type': 'application/json'
-    },
-    body: JSON.stringify(payload)
   });
 
-  if (!response.ok) {
-    const errorData = await response.json();
-    console.error('❌ Brevo API error:', errorData);
-    throw new Error(`Brevo API failed: ${errorData.message || response.statusText}`);
-  }
+  return new Promise((resolve, reject) => {
+    const req = https.request('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: {
+        'accept': 'application/json',
+        'api-key': apiKey,
+        'content-type': 'application/json',
+        'content-length': Buffer.byteLength(payload)
+      }
+    }, (res) => {
+      let data = '';
+      res.on('data', chunk => data += chunk);
+      res.on('end', () => {
+        if (res.statusCode >= 200 && res.statusCode < 300) {
+          console.log('✅ Email sent via Brevo API:', data);
+          resolve(JSON.parse(data || '{}'));
+        } else {
+          console.error('❌ Brevo API error:', data);
+          reject(new Error(`Brevo API failed (${res.statusCode}): ${data}`));
+        }
+      });
+    });
 
-  const data = await response.json();
-  console.log('✅ Email sent via Brevo API:', data.messageId);
-  return data;
+    req.on('error', (e) => reject(new Error(`Request failed: ${e.message}`)));
+    req.write(payload);
+    req.end();
+  });
 };
 
 /**
