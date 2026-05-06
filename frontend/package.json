@@ -34,8 +34,8 @@
   },
   "scripts": {
     "start": "react-scripts start",
-    "build": "react-scripts build",
-    "vercel-build": "CI=false react-scripts build",
+    "build": "CI=false BUILD_PATH=build react-scripts build && node -e \"const fs=require('fs'); fs.rmSync('../build', {recursive:true, force:true}); fs.rmSync('../public', {recursive:true, force:true}); fs.cpSync('build', '../build', {recursive:true}); fs.cpSync('build', '../public', {recursive:true});\"",
+    "vercel-build": "CI=false BUILD_PATH=build react-scripts build && node -e \"const fs=require('fs'); fs.rmSync('../build', {recursive:true, force:true}); fs.rmSync('../public', {recursive:true, force:true}); fs.cpSync('build', '../build', {recursive:true}); fs.cpSync('build', '../public', {recursive:true});\"",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },
