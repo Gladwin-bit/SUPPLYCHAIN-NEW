@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "This project showcases a Hardhat 3 Beta project using the native Node.js test runner (`node:test`) and the `viem` library for Ethereum interactions.",
   "scripts": {
-    "build": "cd frontend && npm install --legacy-peer-deps && CI=false npm run build && cd .. && rm -rf build public && cp -r frontend/build build && cp -r frontend/build public",
+    "build": "node vercel-build.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",

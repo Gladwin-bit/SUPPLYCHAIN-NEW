@@ -1,7 +1,6 @@
 {
-  "installCommand": "cd frontend && npm install --legacy-peer-deps",
-  "buildCommand": "cd frontend && GENERATE_SOURCEMAP=false CI=false npm run build",
-  "outputDirectory": "frontend/build",
+  "buildCommand": "node vercel-build.js",
+  "outputDirectory": "build",
   "rewrites": [
     { "source": "/(.*)", "destination": "/index.html" }
   ]
