@@ -1,17 +1,48 @@
+import { Resend } from 'resend';
 import nodemailer from 'nodemailer';
 
-// Create Gmail SMTP transporter
-const createTransporter = () => {
-  return nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS
-    },
-    tls: {
-      rejectUnauthorized: false  // Allow self-signed certs (needed on some cloud hosts)
+/**
+ * Send email using Resend API (preferred - uses HTTPS, works on Railway)
+ * or fall back to nodemailer if RESEND_API_KEY is not set
+ */
+const sendEmail = async ({ to, subject, html, text }) => {
+  if (process.env.RESEND_API_KEY) {
+    // ✅ Resend API (HTTP - never blocked by cloud firewalls)
+    const resend = new Resend(process.env.RESEND_API_KEY);
+    const fromAddress = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev';
+
+    const { data, error } = await resend.emails.send({
+      from: `Kasaragod Sarees <${fromAddress}>`,
+      to: [to],
+      subject,
+      html,
+      text
+    });
+
+    if (error) {
+      console.error('❌ Resend API error:', error);
+      throw new Error(`Resend failed: ${error.message}`);
     }
-  });
+
+    console.log('✅ Email sent via Resend:', data?.id);
+    return data;
+
+  } else {
+    // Fallback: nodemailer (may be blocked on Railway)
+    console.warn('⚠️ RESEND_API_KEY not set, falling back to nodemailer SMTP');
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
+      tls: { rejectUnauthorized: false }
+    });
+
+    const info = await transporter.sendMail({
+      from: `"Kasaragod Sarees" <${process.env.EMAIL_USER}>`,
+      to, subject, html, text
+    });
+    console.log('✅ Email sent via nodemailer:', info.messageId);
+    return info;
+  }
 };
 
 /**
@@ -124,22 +155,14 @@ This is an automated message from the Kasaragod Sarees Blockchain Supply Chain s
         `
   };
 
-  const transporter = createTransporter();
-
-  // Verify connection before sending
-  try {
-    await transporter.verify();
-    console.log('✅ SMTP connection verified');
-  } catch (verifyError) {
-    console.error('❌ SMTP verify failed:', verifyError.message, verifyError.code);
-    throw verifyError;
-  }
-
-  const info = await transporter.sendMail(mailOptions);
-  console.log(`✅ Handover key email sent to ${recipientEmail}: ${info.messageId}`);
-  return info;
-
-  return info;
+  const result = await sendEmail({
+    to: recipientEmail,
+    subject: mailOptions.subject,
+    html: mailOptions.html,
+    text: mailOptions.text
+  });
+  console.log(`✅ Handover key email sent to ${recipientEmail}`);
+  return result;
 };
 
 /**
@@ -241,9 +264,12 @@ This is an automated message from the Kasaragod Sarees Blockchain Supply Chain s
         `
   };
 
-  const transporter = createTransporter();
-  const info = await transporter.sendMail(mailOptions);
-
-  console.log(`✅ Batch handover key email sent to ${recipientEmail}: ${info.messageId}`);
-  return info;
+  const result = await sendEmail({
+    to: recipientEmail,
+    subject: mailOptions.subject,
+    html: mailOptions.html,
+    text: mailOptions.text
+  });
+  console.log(`✅ Batch handover key email sent to ${recipientEmail}`);
+  return result;
 };
