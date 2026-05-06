@@ -7,7 +7,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 2rem;
+  padding: 0.75rem 1.5rem;
   position: relative;
   overflow: hidden;
 }
@@ -45,11 +45,11 @@
   position: relative;
   z-index: 1;
   width: 100%;
-  max-width: 780px;
+  max-width: min(96vw, 980px);
 }
 
 .register-card {
-  padding: 2.75rem;
+  padding: 1.5rem 2rem;
   border-radius: 20px;
   background: rgba(10, 10, 22, 0.85);
   backdrop-filter: blur(32px);
@@ -60,10 +60,10 @@
 
 .register-header {
   text-align: center;
-  margin-bottom: 2rem;
+  margin-bottom: 0.9rem;
 }
 .register-header h1 {
-  font-size: 1.75rem;
+  font-size: 1.35rem;
   font-weight: 800;
   margin: 0;
   font-family: 'Outfit', sans-serif;
@@ -74,8 +74,8 @@
 }
 .register-header p {
   color: var(--text-muted);
-  font-size: 0.88rem;
-  margin-top: 0.5rem;
+  font-size: 0.82rem;
+  margin-top: 0.25rem;
 }
 
 /* Progress Steps */
@@ -83,7 +83,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 2.5rem;
+  margin-bottom: 1rem;
   padding: 0 1rem;
 }
 .progress-step {
@@ -130,22 +130,22 @@
   height: 1px;
   background: var(--border);
   margin: 0 1rem;
-  margin-bottom: 2rem;
+  margin-bottom: 1.1rem;
 }
 
 /* Form */
 .register-form {
   display: flex;
   flex-direction: column;
-  gap: 2rem;
+  gap: 1rem;
 }
 .form-step {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 0.75rem;
 }
 .form-step h3 {
-  font-size: 1.3rem;
+  font-size: 1.05rem;
   font-weight: 700;
   margin-bottom: 0.15rem;
   font-family: 'Outfit', sans-serif;
@@ -233,7 +233,7 @@
 @keyframes spin { to { transform: rotate(360deg); } }
 
 .register-footer {
-  margin-top: 1.5rem;
+  margin-top: 0.6rem;
   text-align: center;
 }
 .register-footer p { color: var(--text-muted); font-size: 0.88rem; }

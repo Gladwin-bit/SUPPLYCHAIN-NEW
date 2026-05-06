@@ -1,5 +1,5 @@
 // src/App.js
-import React, { lazy, Suspense } from 'react';
+import React, { lazy, Suspense, useState, useRef } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation, NavLink, Navigate } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -11,6 +11,7 @@ import { SupplyChainProvider, useSupplyChainContext } from './context/SupplyChai
 import { ConnectButton } from './components/ConnectButton';
 import ProtectedRoute from './components/ProtectedRoute';
 import NextStepBanner from './components/NextStepBanner';
+import BlockchainBg from './components/BlockchainBg';
 import './App.css';
 import './components/NavBar.css';
 
@@ -27,36 +28,97 @@ const TraceProduct = lazy(() => import('./pages/TraceProduct'));
 const UploadQR = lazy(() => import('./pages/UploadQR'));
 const ConsumerView = lazy(() => import('./pages/ConsumerView'));
 const BlockchainExplorer = lazy(() => import('./pages/BlockchainExplorer'));
+const ChainDashboard = lazy(() => import('./pages/ChainDashboard'));
 const BulkRegister = lazy(() => import('./components/BulkRegister'));
 const ProductScan  = lazy(() => import('./pages/ProductScan'));
 const BatchShowcase = lazy(() => import('./pages/BatchShowcase'));
 
+const normalizeRole = (role) => (typeof role === 'string' ? role.trim().toLowerCase() : '');
+
+/* ── Chain dropdown (merges Blockchain Explorer + Chain Dashboard) ── */
+function ChainDropdown() {
+    const [open, setOpen] = useState(false);
+    const ref = useRef(null);
+    const location = useLocation ? undefined : undefined; // trigger re-render on route change
+
+    // Close on outside click
+    React.useEffect(() => {
+        const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+        document.addEventListener('mousedown', handler);
+        return () => document.removeEventListener('mousedown', handler);
+    }, []);
+
+    const isActive = window.location.pathname === '/explorer' || window.location.pathname === '/chain-dashboard';
+
+    return (
+        <div className="chain-dropdown" ref={ref} onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)}>
+            <button className={`nav-link chain-dropdown__trigger${isActive ? ' active' : ''}`} aria-haspopup="true" aria-expanded={open}>
+                Chain
+                <svg className={`chain-dropdown__chevron${open ? ' open' : ''}`} width="10" height="10" viewBox="0 0 10 10" fill="none">
+                    <path d="M2 3.5L5 6.5L8 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+            </button>
+            {open && (
+                <div className="chain-dropdown__menu" role="menu">
+                    <NavLink to="/explorer" className={({ isActive }) => `chain-dropdown__item${isActive ? ' active' : ''}`} onClick={() => setOpen(false)}>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+                        Explorer
+                    </NavLink>
+                    <NavLink to="/chain-dashboard" className={({ isActive }) => `chain-dropdown__item${isActive ? ' active' : ''}`} onClick={() => setOpen(false)}>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+                        Dashboard
+                    </NavLink>
+                </div>
+            )}
+        </div>
+    );
+}
+
 function Navbar() {
     const { account, connectWallet } = useSupplyChainContext();
     const { user, isAuthenticated, logout } = useAuth();
+    const [scrolled, setScrolled] = React.useState(false);
+    const [scrollPct, setScrollPct] = React.useState(0);
+
+    React.useEffect(() => {
+        const handler = () => {
+            setScrolled(window.scrollY > 60);
+            const doc = document.documentElement;
+            const pct = (window.scrollY / (doc.scrollHeight - doc.clientHeight)) * 100;
+            setScrollPct(Math.min(pct, 100));
+        };
+        window.addEventListener('scroll', handler, { passive: true });
+        return () => window.removeEventListener('scroll', handler);
+    }, []);
+
+    const role = normalizeRole(user?.role);
 
     return (
-        <nav className="navbar">
+        <>
+        <div className="scroll-progress-bar" style={{ width: `${scrollPct}%` }} />
+        <nav className={`navbar${scrolled ? ' navbar--scrolled' : ''}`}>
             <div className="nav-brand">
                 <Link to={isAuthenticated ? "/" : "/welcome"}>
                     <span className="logo-icon">⬡</span>
-                    <span className="logo-text">ChainProof</span>
+                    <span className="logo-text">Kasaragod Sarees</span>
                 </Link>
             </div>
 
             {isAuthenticated && (
                 <div className="nav-links">
                     <NavLink to="/" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Home</NavLink>
-                    {user && user.role === 'manufacturer' && (
+                    {role === 'manufacturer' && (
                         <NavLink to="/create" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Create</NavLink>
                     )}
-                    {user && user.role !== 'customer' && (
+                    {user && role !== 'customer' && (
                         <NavLink to="/custody" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Manage</NavLink>
                     )}
-                    <NavLink to="/verify" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Verify</NavLink>
+                    {role === 'customer' && (
+                        <NavLink to="/verify" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Verify</NavLink>
+                    )}
                     <NavLink to="/trace" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Trace</NavLink>
                     <NavLink to="/batch-showcase" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Batches</NavLink>
-                    <NavLink to="/explorer" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Blockchain</NavLink>
+                    <ChainDropdown />
                     <NavLink to="/profile" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Profile</NavLink>
 
 
@@ -96,10 +158,11 @@ function Navbar() {
             {!isAuthenticated && (
                 <div className="auth-buttons">
                     <Link to="/login" className="nav-link-btn">Sign In</Link>
-                    <Link to="/register" className="btn btn-primary btn-nav-primary">Get Started</Link>
+                    <Link to="/register" className="btn-nav-primary">Get Started</Link>
                 </div>
             )}
         </nav>
+        </>
     );
 }
 
@@ -155,7 +218,7 @@ function AnimatedRoutes() {
                     </ProtectedRoute>
                 } />
                 <Route path="/verify" element={
-                    <ProtectedRoute>
+                    <ProtectedRoute roles={['customer']} redirectTo="/">
                         <Suspense fallback={Fallback}><PageWrapper><VerifyProduct /></PageWrapper></Suspense>
                     </ProtectedRoute>
                 } />
@@ -167,6 +230,11 @@ function AnimatedRoutes() {
                 <Route path="/batch-showcase" element={
                     <ProtectedRoute>
                         <Suspense fallback={Fallback}><PageWrapper><BatchShowcase /></PageWrapper></Suspense>
+                    </ProtectedRoute>
+                } />
+                <Route path="/chain-dashboard" element={
+                    <ProtectedRoute>
+                        <Suspense fallback={Fallback}><PageWrapper><ChainDashboard /></PageWrapper></Suspense>
                     </ProtectedRoute>
                 } />
                 <Route path="/profile" element={
@@ -214,6 +282,7 @@ function App() {
                 <ThemeProvider>
                     <Router>
                         <div className="App">
+                            <BlockchainBg />
                             <Navbar />
                             <NextStepBanner />
                             <AnimatedRoutes />

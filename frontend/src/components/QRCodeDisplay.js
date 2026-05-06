@@ -1,11 +1,17 @@
 // src/components/QRCodeDisplay.js
+// QR encodes a URL only — the secretCode is NEVER embedded in the QR.
+// It is printed separately under a scratch-off panel on the physical label.
 import React, { useRef } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { toast } from 'react-toastify';
 import './QRCodeDisplay.css';
 
+const APP_ORIGIN = process.env.REACT_APP_PUBLIC_URL?.replace(/\/$/, "") || window.location.origin;
+
 const QRCodeDisplay = ({ productId, secretCode }) => {
     const qrRef = useRef();
+    // QR points to the product page — journey is fetched live from blockchain on scan
+    const qrUrl = `${APP_ORIGIN}/product/${productId}`;
 
     const downloadQR = () => {
         const svg = qrRef.current.querySelector('svg');
@@ -32,9 +38,8 @@ const QRCodeDisplay = ({ productId, secretCode }) => {
     };
 
     const copyToClipboard = () => {
-        const data = JSON.stringify({ productId, secretCode });
-        navigator.clipboard.writeText(data);
-        toast.info('Product data copied to clipboard!');
+        navigator.clipboard.writeText(qrUrl);
+        toast.info('Product URL copied to clipboard!');
     };
 
     return (
@@ -48,14 +53,17 @@ const QRCodeDisplay = ({ productId, secretCode }) => {
                     <span className="info-value-display">{productId}</span>
                 </div>
                 <div className="info-row">
-                    <span className="info-label">Secret Code:</span>
+                    <span className="info-label">Scratch-off Code:</span>
                     <span className="info-value-display secret-code">{secretCode}</span>
+                    <span style={{ fontSize: "0.7rem", color: "#f59e0b", marginLeft: "0.5rem" }}>
+                        ⚠ Print under scratch-off label only — do not put on QR
+                    </span>
                 </div>
             </div>
 
             <div className="qr-code-wrapper" ref={qrRef}>
                 <QRCodeSVG
-                    value={JSON.stringify({ productId, secretCode })}
+                    value={qrUrl}
                     size={150}
                     level="H"
                     includeMargin={true}
@@ -68,11 +76,11 @@ const QRCodeDisplay = ({ productId, secretCode }) => {
                     📥 Download QR
                 </button>
                 <button className="btn btn-copy" onClick={copyToClipboard}>
-                    📋 Copy Data
+                    📋 Copy URL
                 </button>
             </div>
             <p className="qr-info">
-                Scan this code to verify product authenticity
+                Scan to view supply chain journey · Enter scratch code to verify authenticity
             </p>
         </div>
     );

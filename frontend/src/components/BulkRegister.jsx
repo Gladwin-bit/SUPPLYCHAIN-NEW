@@ -45,10 +45,12 @@ const buildWaybillPayload = (batchId, handoverKey, sender, name, count) =>
         issuedAt: new Date().toISOString()
     });
 
-// QR encodes a direct URL — secret is ONLY on the physical scratch-off label
+// QR encodes a stable URL — secret is ONLY on the physical scratch-off label
 // Customer scans QR → browser opens /product/:id?batch=batchId → views journey → enters scratch code
+// IMPORTANT: REACT_APP_PUBLIC_URL must be the deployed domain in production (not localhost)
+const APP_ORIGIN = process.env.REACT_APP_PUBLIC_URL?.replace(/\/$/, "") || window.location.origin;
 const buildConsumerPayload = (productId, batchId) =>
-    `${window.location.origin}/product/${productId}?batch=${encodeURIComponent(batchId)}`;
+    `${APP_ORIGIN}/product/${productId}?batch=${encodeURIComponent(batchId)}`;
 
 // ─────────────────────────────────────────────────────────────────
 export default function BulkRegister() {

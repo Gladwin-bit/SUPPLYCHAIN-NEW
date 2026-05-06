@@ -6,13 +6,15 @@ import { useSupplyChainContext } from "../context/SupplyChainContext";
 import { motion, AnimatePresence } from "framer-motion";
 import "./NextStepBanner.css";
 
+const normalizeRole = (role) => (typeof role === "string" ? role.trim().toLowerCase() : "");
+
 /**
  * Computes the single most relevant next step for the logged-in user.
  * Returns null if nothing actionable right now.
  */
 function computeNextStep({ user, account, pathname }) {
     if (!user) return null;
-    const role = user.role;
+    const role = normalizeRole(user.role);
 
     // --- Step 1: Wallet not connected ---
     if (!account) {

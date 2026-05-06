@@ -1,9 +1,9 @@
 /* src/pages/AdminPanel.css — Purple/Cyan Redesign */
 
 .admin-panel.container {
-    max-width: 600px;
-    margin: 4rem auto;
-    padding: 3rem;
+    max-width: 720px;
+    margin: 1.5rem auto;
+    padding: 2rem 2.25rem;
     background: var(--glass-bg);
     border: 1px solid var(--glass-border);
     border-top: 4px solid var(--purple);

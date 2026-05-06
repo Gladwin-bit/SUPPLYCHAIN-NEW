@@ -2,7 +2,9 @@ import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
-const ProtectedRoute = ({ children, roles }) => {
+const normalizeRole = (role) => (typeof role === 'string' ? role.trim().toLowerCase() : '');
+
+const ProtectedRoute = ({ children, roles, redirectTo = null }) => {
     const { isAuthenticated, user, loading } = useAuth();
 
     if (loading) {
@@ -20,7 +22,13 @@ const ProtectedRoute = ({ children, roles }) => {
 
     // Check role-based access if roles are specified
     if (roles && roles.length > 0) {
-        if (!user || !roles.includes(user.role)) {
+        const allowedRoles = roles.map(normalizeRole);
+        const userRole = normalizeRole(user?.role);
+
+        if (!user || !allowedRoles.includes(userRole)) {
+            if (redirectTo) {
+                return <Navigate to={redirectTo} replace />;
+            }
             return (
                 <div className="access-denied">
                     <h2>Access Denied</h2>

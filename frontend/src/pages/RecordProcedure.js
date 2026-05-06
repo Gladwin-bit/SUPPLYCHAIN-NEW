@@ -115,7 +115,7 @@ const RecordProcedure = () => {
             }
 
             setStatus("💾 Saving to database…");
-            await fetch("http://localhost:5000/api/products/register", {
+            const dbRes  = await fetch("http://localhost:5000/api/products/register", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -127,6 +127,8 @@ const RecordProcedure = () => {
                     txHash: result?.txHash || ""
                 })
             });
+            const dbData = await dbRes.json();
+            if (!dbData.success) throw new Error(`Database save failed: ${dbData.message}`);
 
             if (threads[0].supplier || dyes[0].supplier || fabricSources[0].vendor) {
                 await fetch("http://localhost:5000/api/products/upload-materials-metadata", {
@@ -527,112 +529,179 @@ const RecordProcedure = () => {
                 )}
             </div>
 
-            {/* ── Success Overlay ─ Horizontal Tabbed Layout ──── */}
+            {/* ── Success Screen — full-viewport takeover ──────── */}
             <AnimatePresence>
                 {createdProduct && (
-                    <motion.div className="rp-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                    <motion.div
+                        className="rps-screen"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.35 }}
+                    >
+                        {/* Ambient glow blobs */}
+                        <div className="rps-blob rps-blob--purple" aria-hidden="true" />
+                        <div className="rps-blob rps-blob--cyan"   aria-hidden="true" />
+
+                        {/* ── Header strip ── */}
                         <motion.div
-                            className="rp-success-panel"
-                            initial={{ scale: 0.95, opacity: 0, y: 20 }}
-                            animate={{ scale: 1, opacity: 1, y: 0 }}
-                            exit={{ scale: 0.95, opacity: 0, y: 20 }}
-                            transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                            className="rps-header"
+                            initial={{ opacity: 0, y: -18 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.1, duration: 0.4, ease: [0.22,1,0.36,1] }}
                         >
-                            {/* Top bar */}
-                            <div className="rps-topbar">
-                                <div className="rps-topbar-left">
-                                    <span className="rps-success-icon">✅</span>
-                                    <div>
-                                        <h2 className="rps-title">Saree Registered Successfully</h2>
-                                        <p className="rps-subtitle">Product {formattedProductId || `#${createdProduct.id}`} is now live on the blockchain</p>
-                                    </div>
+                            <div className="rps-header-left">
+                                <span className="rps-check-badge">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                                </span>
+                                <div>
+                                    <h2 className="rps-h2">Saree Registered Successfully</h2>
+                                    <p className="rps-h2-sub">
+                                        Product <strong>{formattedProductId || `#${createdProduct.id}`}</strong> is live on the blockchain
+                                    </p>
                                 </div>
-                                <button className="rp-overlay-close" onClick={() => setCreatedProduct(null)}>×</button>
                             </div>
-
-                            {/* Horizontal content grid */}
-                            <div className="rps-grid">
-                                {/* Column 1 — QR Code */}
-                                <motion.div
-                                    className="rps-col"
-                                    initial={{ opacity: 0, y: 12 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: 0.1, duration: 0.3 }}
-                                >
-                                    <div className="rps-col-header">
-                                        <span className="rps-col-icon">📱</span>
-                                        <span className="rps-col-label">Product QR Code</span>
-                                    </div>
-                                    <div className="rps-qr-area">
-                                        <QRCodeDisplay productId={createdProduct.id} secretCode={createdProduct.consumerSecret} />
-                                    </div>
-                                </motion.div>
-
-                                {/* Column 2 — Security Keys */}
-                                <motion.div
-                                    className="rps-col"
-                                    initial={{ opacity: 0, y: 12 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: 0.2, duration: 0.3 }}
-                                >
-                                    <div className="rps-col-header">
-                                        <span className="rps-col-icon">🔐</span>
-                                        <span className="rps-col-label">Security Keys</span>
-                                    </div>
-                                    <div className="rps-keys">
-                                        <div className="rps-key-card rps-key-card--gold">
-                                            <span className="rps-key-badge">Consumer Scratch Code</span>
-                                            <code className="rps-key-value rps-key-value--gold">{createdProduct.consumerSecret}</code>
-                                            <p className="rps-key-hint">Share this with the end consumer for verification</p>
-                                        </div>
-                                        <div className="rps-key-card rps-key-card--blue">
-                                            <span className="rps-key-badge">Handover Key</span>
-                                            <code className="rps-key-value rps-key-value--blue">{createdProduct.handoverKey}</code>
-                                            <p className="rps-key-hint">Used to transfer custody to the next party</p>
-                                        </div>
-                                    </div>
-                                </motion.div>
-
-                                {/* Column 3 — Next Steps */}
-                                <motion.div
-                                    className="rps-col"
-                                    initial={{ opacity: 0, y: 12 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: 0.3, duration: 0.3 }}
-                                >
-                                    <div className="rps-col-header">
-                                        <span className="rps-col-icon">🚀</span>
-                                        <span className="rps-col-label">Next Steps</span>
-                                    </div>
-                                    <div className="rps-actions">
-                                        <Link to={`/custody?id=${createdProduct.id}`} className="rps-action-card rps-action-card--primary">
-                                            <span className="rps-act-icon">📤</span>
-                                            <div>
-                                                <span className="rps-act-title">Generate Waybill</span>
-                                                <span className="rps-act-desc">Create QR waybill to dispatch this saree</span>
-                                            </div>
-                                            <span className="rps-act-arrow">→</span>
-                                        </Link>
-                                        <Link to="/create" className="rps-action-card" onClick={() => setCreatedProduct(null)}>
-                                            <span className="rps-act-icon">✨</span>
-                                            <div>
-                                                <span className="rps-act-title">Register Another</span>
-                                                <span className="rps-act-desc">Start a new saree registration</span>
-                                            </div>
-                                            <span className="rps-act-arrow">→</span>
-                                        </Link>
-                                        <Link to="/" className="rps-action-card">
-                                            <span className="rps-act-icon">🏠</span>
-                                            <div>
-                                                <span className="rps-act-title">Back to Dashboard</span>
-                                                <span className="rps-act-desc">View all your registered sarees</span>
-                                            </div>
-                                            <span className="rps-act-arrow">→</span>
-                                        </Link>
-                                    </div>
-                                </motion.div>
-                            </div>
+                            <button className="rps-close" onClick={() => setCreatedProduct(null)} title="Close">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                            </button>
                         </motion.div>
+
+                        {/* ── Main content: 3-column bento ── */}
+                        <div className="rps-body">
+
+                            {/* LEFT — QR card */}
+                            <motion.div
+                                className="rps-card rps-card--qr"
+                                initial={{ opacity: 0, y: 24 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.18, duration: 0.45, ease: [0.22,1,0.36,1] }}
+                            >
+                                <div className="rps-card-label">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="5" height="5"/><rect x="16" y="3" width="5" height="5"/><rect x="3" y="16" width="5" height="5"/><rect x="16" y="16" width="5" height="5"/></svg>
+                                    Product QR Code
+                                </div>
+                                <div className="rps-product-id-badge">
+                                    <span className="rps-pid-label">Product ID</span>
+                                    <span className="rps-pid-val">{formattedProductId || `#${createdProduct.id}`}</span>
+                                </div>
+                                <div className="rps-qr-frame">
+                                    <QRCodeDisplay productId={createdProduct.id} secretCode={createdProduct.consumerSecret} />
+                                </div>
+                                <p className="rps-qr-hint">Scan to verify product authenticity</p>
+                            </motion.div>
+
+                            {/* CENTRE — Security keys */}
+                            <motion.div
+                                className="rps-card rps-card--keys"
+                                initial={{ opacity: 0, y: 24 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.26, duration: 0.45, ease: [0.22,1,0.36,1] }}
+                            >
+                                <div className="rps-card-label">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                                    Security Keys
+                                </div>
+
+                                {/* Scratch code */}
+                                <div className="rps-key-block rps-key-block--scratch">
+                                    <div className="rps-key-top">
+                                        <span className="rps-key-tag">Consumer Scratch Code</span>
+                                        <span className="rps-key-badge-pill">Hidden on label</span>
+                                    </div>
+                                    <div className="rps-key-row">
+                                        <code className="rps-key-mono rps-key-mono--purple">{createdProduct.consumerSecret}</code>
+                                        <button className="rps-copy-btn" onClick={() => copyToClipboard(createdProduct.consumerSecret, 'scratch')} title="Copy">
+                                            {copied === 'scratch'
+                                                ? <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                                                : <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                                            }
+                                        </button>
+                                    </div>
+                                    <p className="rps-key-desc">Print on hidden scratch-off label — never put on QR</p>
+                                </div>
+
+                                {/* Handover key */}
+                                <div className="rps-key-block rps-key-block--handover">
+                                    <div className="rps-key-top">
+                                        <span className="rps-key-tag">First Handover Key</span>
+                                        <span className="rps-key-badge-pill rps-key-badge-pill--cyan">B2B Transfer</span>
+                                    </div>
+                                    <div className="rps-key-row">
+                                        <code className="rps-key-mono rps-key-mono--cyan">{createdProduct.handoverKey}</code>
+                                        <button className="rps-copy-btn" onClick={() => copyToClipboard(createdProduct.handoverKey, 'handover')} title="Copy">
+                                            {copied === 'handover'
+                                                ? <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                                                : <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                                            }
+                                        </button>
+                                    </div>
+                                    <p className="rps-key-desc">Share with Cooperative / Distributor at first custody transfer</p>
+                                </div>
+
+                                {/* Chain of custody mini-diagram */}
+                                <div className="rps-custody-trail">
+                                    {['Manufacturer', 'Cooperative', 'Distributor', 'Retailer', 'Customer'].map((node, i, arr) => (
+                                        <React.Fragment key={node}>
+                                            <span className={`rps-trail-node${i === 0 ? ' rps-trail-node--active' : ''}`}>{node}</span>
+                                            {i < arr.length - 1 && <span className="rps-trail-arrow">→</span>}
+                                        </React.Fragment>
+                                    ))}
+                                </div>
+                            </motion.div>
+
+                            {/* RIGHT — Actions */}
+                            <motion.div
+                                className="rps-card rps-card--actions"
+                                initial={{ opacity: 0, y: 24 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.34, duration: 0.45, ease: [0.22,1,0.36,1] }}
+                            >
+                                <div className="rps-card-label">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/></svg>
+                                    Next Steps
+                                </div>
+
+                                <Link to={`/custody?id=${createdProduct.id}`} className="rps-action rps-action--primary">
+                                    <span className="rps-action-icon">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M22 2L11 13"/><path d="M22 2L15 22 11 13 2 9l20-7z"/></svg>
+                                    </span>
+                                    <div className="rps-action-text">
+                                        <span className="rps-action-title">Generate Waybill</span>
+                                        <span className="rps-action-desc">Create dispatch QR for custody transfer</span>
+                                    </div>
+                                    <svg className="rps-action-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                                </Link>
+
+                                <Link to="/create" className="rps-action" onClick={() => setCreatedProduct(null)}>
+                                    <span className="rps-action-icon rps-action-icon--dim">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                                    </span>
+                                    <div className="rps-action-text">
+                                        <span className="rps-action-title">Register Another</span>
+                                        <span className="rps-action-desc">Start a new saree registration</span>
+                                    </div>
+                                    <svg className="rps-action-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                                </Link>
+
+                                <Link to="/" className="rps-action">
+                                    <span className="rps-action-icon rps-action-icon--dim">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                                    </span>
+                                    <div className="rps-action-text">
+                                        <span className="rps-action-title">Back to Dashboard</span>
+                                        <span className="rps-action-desc">View all your registered sarees</span>
+                                    </div>
+                                    <svg className="rps-action-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                                </Link>
+
+                                {/* Blockchain confirmation pill */}
+                                <div className="rps-confirm-pill">
+                                    <span className="rps-confirm-dot" />
+                                    <span>Transaction confirmed on Hardhat #31337</span>
+                                </div>
+                            </motion.div>
+
+                        </div>{/* /rps-body */}
                     </motion.div>
                 )}
             </AnimatePresence>

@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import { toast } from "react-toastify";
 import { useSupplyChain } from "../hooks/useSupplyChain";
 import { useAuth } from "../context/AuthContext";
 import { ConnectButton } from "../components/ConnectButton";
@@ -15,6 +16,8 @@ const STATE_META = {
     3: { label: "Claimed",    cls: "s-claimed",   icon: "⚪" },
 };
 
+const normalizeRole = (role) => (typeof role === 'string' ? role.trim().toLowerCase() : '');
+
 const Home = () => {
     const { contract, readOnlyContract, account, connectWallet } = useSupplyChainContext();
     const { getProductData } = useSupplyChain();
@@ -27,6 +30,7 @@ const Home = () => {
     const [loading, setLoading] = useState(false);
     const [fetchErr, setFetchErr] = useState("");
     const [expanded, setExpanded] = useState(null);
+    const [claimedProducts, setClaimedProducts] = useState([]);
 
     const fetchMyProducts = useCallback(async () => {
         if (!account) return;
@@ -301,13 +305,82 @@ const Home = () => {
         }
     }, [contract, readOnlyContract, account, getProductData]);
 
-    useEffect(() => { fetchMyProducts(); }, [fetchMyProducts]);
+    const fetchCustomerClaimedProducts = useCallback(async () => {
+        if (!account) return;
+        setLoading(true); setFetchErr("");
+        // Immediately hydrate from localStorage cache for instant render
+        const cacheKey = `customer-claimed-${account.toLowerCase()}`;
+        try {
+            const cached = localStorage.getItem(cacheKey);
+            if (cached) {
+                const parsed = JSON.parse(cached);
+                setClaimedProducts(parsed);
+                setStats({ total: parsed.length, inCustody: parsed.length, transferred: 0 });
+            }
+        } catch { /* corrupt cache, ignore */ }
+
+        const tc = contract || readOnlyContract;
+        if (!tc) { setLoading(false); return; }
+        try {
+            const events = await tc.queryFilter(tc.filters.CustomerOwnershipClaimed(null, account));
+            const claimedIds = [...new Set(events.map(e => Number(e.args.id)))];
+            const products = await Promise.all(
+                claimedIds.map(async (id) => {
+                    try { return await getProductData(id); } catch { return null; }
+                })
+            );
+            const valid = products.filter(Boolean);
+            setClaimedProducts(valid);
+            setStats({ total: valid.length, inCustody: valid.length, transferred: 0 });
+            try { localStorage.setItem(cacheKey, JSON.stringify(valid)); } catch { /* storage full */ }
+        } catch (err) {
+            console.error('Customer claimed fetch error:', err);
+            setFetchErr("Could not load your claimed products.");
+        } finally {
+            setLoading(false);
+        }
+    }, [contract, readOnlyContract, account, getProductData]);
+
+    useEffect(() => {
+        if (normalizeRole(user?.role) === 'customer') {
+            fetchCustomerClaimedProducts();
+        } else {
+            fetchMyProducts();
+        }
+    }, [user, fetchMyProducts, fetchCustomerClaimedProducts]);
+
+    // ── Font injection for luxury typography ────────────────────────
+    useEffect(() => {
+        const link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = 'https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,700&family=JetBrains+Mono:wght@400;600;700&family=Outfit:wght@400;600;700;800&display=swap';
+        document.head.appendChild(link);
+        return () => { try { document.head.removeChild(link); } catch {} };
+    }, []);
 
     const pending = sarees.filter(s => s.currentOwner?.toLowerCase() === account?.toLowerCase() && s.stateRaw === 0);
     const firstName = user?.name ? user.name.split(" ")[0] : "Weaver";
     const greeting = (() => { const h = new Date().getHours(); return h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening"; })();
-    const isManufacturer = !user?.role || user.role === 'manufacturer';
-    const roleLabel = user?.role ? (user.role.charAt(0).toUpperCase() + user.role.slice(1)) : 'Manufacturer';
+    const role = normalizeRole(user?.role);
+    const isManufacturer = !role || role === 'manufacturer';
+    const isCustomer = role === 'customer';
+    const roleLabel = role ? (role.charAt(0).toUpperCase() + role.slice(1)) : 'Manufacturer';
+
+    // ── Animated counter for claimed products section ─────────────────
+    const [displayCount, setDisplayCount] = React.useState(0);
+    useEffect(() => {
+        if (!isCustomer || claimedProducts.length === 0) { setDisplayCount(0); return; }
+        let start = 0;
+        const end = claimedProducts.length;
+        const duration = 800;
+        const step = Math.ceil(duration / (end * 16));
+        const timer = setInterval(() => {
+            start += 1;
+            setDisplayCount(start);
+            if (start >= end) clearInterval(timer);
+        }, step);
+        return () => clearInterval(timer);
+    }, [claimedProducts.length, isCustomer]);
 
     // ── Batch Card Component ──────────────────────────────────────────
     const BatchCard = ({ batch, index }) => {
@@ -492,13 +565,96 @@ const Home = () => {
         );
     };
 
+    // ── Claimed Product Card (customer ownership view) ──────────────
+    const ClaimedProductCard = ({ product, index }) => {
+        const [open, setOpen] = React.useState(false);
+        return (
+            <motion.div
+                className="saree-card"
+                initial={{ opacity: 0, y: 20, scale: 0.97 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ delay: index * 0.06, duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+                whileHover={{ y: -4, transition: { duration: 0.2 } }}
+                onClick={() => setOpen(!open)}
+            >
+                <div className="card-img-placeholder loaded"><span className="card-img-icon">🧣</span></div>
+                <div className="saree-card-accent s-claimed" />
+                <div className="saree-card-header">
+                    <span className="saree-card-id">#{product.id}</span>
+                    <div className="saree-card-status-row">
+                        <span className="state-chip s-claimed">⚪ {product.state}</span>
+                        <span className="you-chip">✓ Yours</span>
+                    </div>
+                </div>
+                <h3 className="saree-card-name">{product.name}</h3>
+                <div className="saree-card-meta">
+                    <div className="saree-meta-item">
+                        <span className="meta-icon">📍</span>
+                        <div>
+                            <span className="meta-label">Loom</span>
+                            <span className="meta-value">{product.loomLocation || '—'}</span>
+                        </div>
+                    </div>
+                    <div className="saree-meta-item">
+                        <span className="meta-icon">📅</span>
+                        <div>
+                            <span className="meta-label">Woven</span>
+                            <span className="meta-value">{product.weaveDate || '—'}</span>
+                        </div>
+                    </div>
+                    {product.customerClaim && (
+                        <div className="saree-meta-item">
+                            <span className="meta-icon">🕐</span>
+                            <div>
+                                <span className="meta-label">Claimed</span>
+                                <span className="meta-value">{product.customerClaim.timestamp}</span>
+                            </div>
+                        </div>
+                    )}
+                </div>
+                <AnimatePresence>
+                    {open && (
+                        <motion.div
+                            className="saree-card-details"
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: "auto", opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.25, ease: "easeOut" }}
+                        >
+                            <div className="saree-detail-grid">
+                                {product.customerClaim && (
+                                    <div className="saree-detail-item">
+                                        <span className="detail-label">Registered As</span>
+                                        <span className="detail-value">{product.customerClaim.customerName}</span>
+                                    </div>
+                                )}
+                                <div className="saree-detail-item">
+                                    <span className="detail-label">Chain State</span>
+                                    <span className="detail-value">{product.state}</span>
+                                </div>
+                                <div className="saree-detail-item">
+                                    <span className="detail-label">Custody Steps</span>
+                                    <span className="detail-value">{product.history?.length || 0} entries</span>
+                                </div>
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+                <div className="saree-card-actions" onClick={e => e.stopPropagation()}>
+                    <Link to="/trace" className="sa-btn sa-btn--ghost">🔍 Trace</Link>
+                    <Link to="/verify" className="sa-btn sa-btn--ghost">🛡️ Verify</Link>
+                </div>
+            </motion.div>
+        );
+    };
+
     // ── Content States ──────────────────────────────────────────────
     const SareeContent = () => {
         if (!account) return (
             <div className="content-state">
                 <div className="state-visual">🔌</div>
                 <h3 className="state-title">Wallet Not Connected</h3>
-                <p className="state-desc">Connect your MetaMask wallet to view your registered sarees.</p>
+                <p className="state-desc">{isCustomer ? 'Connect your MetaMask wallet to view your claimed products.' : 'Connect your MetaMask wallet to view your registered sarees.'}</p>
                 <ConnectButton onClick={connectWallet} />
             </div>
         );
@@ -521,9 +677,28 @@ const Home = () => {
                 <div className="state-visual">⚠️</div>
                 <h3 className="state-title">Connection Issue</h3>
                 <p className="state-desc">{fetchErr}</p>
-                <button className="btn btn-secondary" onClick={fetchMyProducts}>↻ Try Again</button>
+                <button className="btn btn-secondary" onClick={isCustomer ? fetchCustomerClaimedProducts : fetchMyProducts}>↻ Try Again</button>
             </div>
         );
+        // Customer-specific view: show only claimed products
+        if (isCustomer) {
+            if (!claimedProducts.length) return (
+                <div className="content-state">
+                    <div className="state-visual">🏷️</div>
+                    <h3 className="state-title">No Claimed Products Yet</h3>
+                    <p className="state-desc">You haven't claimed any products. Go to Verify and use your physical scratch-off code to claim ownership.</p>
+                    <Link to="/verify" className="btn btn-primary">🛡️ Verify a Product</Link>
+                </div>
+            );
+            return (
+                <div className="saree-grid">
+                    {claimedProducts.map((p, i) => (
+                        <ClaimedProductCard key={p.id} product={p} index={i} />
+                    ))}
+                </div>
+            );
+        }
+
         if (!sarees.length && !batchGroups.length) return (
             <div className="content-state">
                 <div className="state-visual">📭</div>
@@ -552,7 +727,7 @@ const Home = () => {
         <div className="dash">
 
             {/* ─── HERO BAND ─────────────────────────────────────── */}
-            <div className="hero-band">
+            <div className="hero-band dash-section--1">
                 <div className="hero-content">
                     <div className="hero-left">
                         <span className="hero-eyebrow">{greeting}</span>
@@ -561,12 +736,16 @@ const Home = () => {
                     </div>
                     <div className="hero-right">
                         {account ? (
-                            <div className="wallet-chip">
+                            <div className="wallet-chip" onClick={() => {
+                                navigator.clipboard.writeText(account);
+                                toast.success("Address copied!", { autoClose: 1800 });
+                            }} title="Click to copy address">
                                 <span className="wdot" />
                                 <div>
                                     <span className="wlbl">MetaMask Connected</span>
                                     <span className="waddr">{account.slice(0, 8)}…{account.slice(-6)}</span>
                                 </div>
+                                <span className="wallet-copy-hint">COPY</span>
                             </div>
                         ) : (
                             <div className="wallet-prompt">
@@ -596,8 +775,9 @@ const Home = () => {
                     )}
                 </AnimatePresence>
 
-                {/* ─── KPI CARDS ─────────────────────────────────── */}
-                <div className="kpi-row">
+                {/* ─── KPI CARDS (non-customer only) ─────────────── */}
+                {!isCustomer && (
+                <div className="kpi-row dash-section--2">
                     {[
                         { label: "Total Registered", value: stats.total, icon: "◈", gradient: "linear-gradient(135deg, rgba(168,85,247,0.12), rgba(0,212,255,0.06))", accent: "#a855f7" },
                         { label: "In My Custody", value: stats.inCustody, icon: "📦", gradient: "linear-gradient(135deg, rgba(181,89,26,0.12), rgba(251,191,36,0.06))", accent: "#fbbf24" },
@@ -632,52 +812,86 @@ const Home = () => {
                         </motion.div>
                     ))}
                 </div>
+                )}
 
                 {/* ─── MAIN CONTENT ─────────────────────────────── */}
                 <div className="main-content-grid">
 
                     {/* Quick Actions - horizontal strip */}
-                    <motion.div className="quick-actions-strip"
+                    <motion.div className="quick-actions-strip dash-section--3"
                         initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.25, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
                     >
                         <div className="strip-header">
                             <span className="strip-title">Quick Actions</span>
                         </div>
-                        <div className="strip-actions">
-                            {[
-                                { to: "/create",  icon: "✨", title: "Register New Saree",  desc: "Mint on-chain", primary: true },
-                                { to: "/custody", icon: "📤", title: "Manage Handover",     desc: "Transfer custody" },
-                                { to: "/trace",   icon: "🔍", title: "Trace a Saree",       desc: "Track journey" },
-                                { to: "/verify",  icon: "🛡️", title: "Verify Authenticity", desc: "Check codes" },
-                            ].map((a, i) => (
-                                <motion.div
-                                    key={a.to}
-                                    whileHover={{ y: -3, scale: 1.02 }}
-                                    whileTap={{ scale: 0.98 }}
-                                >
-                                    <Link to={a.to} className={`strip-action ${a.primary ? "strip-action--primary" : ""}`}>
-                                        <span className="strip-action-icon">{a.icon}</span>
-                                        <span className="strip-action-title">{a.title}</span>
-                                        <span className="strip-action-desc">{a.desc}</span>
-                                    </Link>
-                                </motion.div>
-                            ))}
-                        </div>
+                        {isCustomer ? (
+                            <div className="strip-actions strip-actions--customer">
+                                {[
+                                    { to: "/trace",  icon: "🔍", title: "Trace a Product",  desc: "Track journey",
+                                      backTitle: "Provenance Trace", backDesc: "Follow your saree's complete custody chain from loom to your hands.", cta: "Trace Now →" },
+                                    { to: "/verify", icon: "🛡️", title: "Verify & Claim",   desc: "Scan your product",
+                                      backTitle: "Claim Ownership", backDesc: "Use your physical scratch-off code to verify and register ownership on-chain.", cta: "Verify Now →" },
+                                ].map((a) => (
+                                    <div className="flip-card-wrap" key={a.to}>
+                                        <div className="flip-card-inner">
+                                            <div className="flip-card-front">
+                                                <span className="flip-icon">{a.icon}</span>
+                                                <span className="strip-action-title">{a.title}</span>
+                                                <span className="strip-action-desc">{a.desc}</span>
+                                            </div>
+                                            <div className="flip-card-back">
+                                                <span className="flip-back-title">{a.backTitle}</span>
+                                                <span className="flip-back-desc">{a.backDesc}</span>
+                                                <Link to={a.to} className="btn-gold">{a.cta}</Link>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="strip-actions">
+                                {[
+                                    { to: "/create",  icon: "✨", title: "Register New Saree",  desc: "Mint on-chain", primary: true },
+                                    { to: "/custody", icon: "📤", title: "Manage Handover",     desc: "Transfer custody" },
+                                    { to: "/trace",   icon: "🔍", title: "Trace a Saree",       desc: "Track journey" },
+                                ].map((a, i) => (
+                                    <motion.div
+                                        key={a.to}
+                                        whileHover={{ y: -3, scale: 1.02 }}
+                                        whileTap={{ scale: 0.98 }}
+                                    >
+                                        <Link to={a.to} className={`strip-action ${a.primary ? "strip-action--primary" : ""}`}>
+                                            <span className="strip-action-icon">{a.icon}</span>
+                                            <span className="strip-action-title">{a.title}</span>
+                                            <span className="strip-action-desc">{a.desc}</span>
+                                        </Link>
+                                    </motion.div>
+                                ))}
+                            </div>
+                        )}
                     </motion.div>
 
                     {/* Sarees Section */}
-                    <motion.section className="sarees-section"
+                    <motion.section className="sarees-section dash-section--4"
                         initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.3, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}>
                         <div className="section-hd">
                             <div>
-                                <h2 className="section-title">{isManufacturer ? 'My Registered Sarees' : 'Products In My Custody'}</h2>
+                                <h2 className="section-title">
+                                {isCustomer ? 'My Claimed Products' : isManufacturer ? 'My Registered Sarees' : 'Products In My Custody'}
+                                {isCustomer && claimedProducts.length > 0 && (
+                                    <span className="section-counter-num">{displayCount}</span>
+                                )}
+                            </h2>
                                 <p className="section-sub">
-                                    {!loading && !fetchErr && `${sarees.length} record${sarees.length !== 1 ? "s" : ""} on the blockchain`}
+                                    {!loading && !fetchErr && (isCustomer
+                                        ? `${claimedProducts.length} claimed product${claimedProducts.length !== 1 ? 's' : ''}`
+                                        : `${sarees.length} record${sarees.length !== 1 ? 's' : ''} on the blockchain`
+                                    )}
                                 </p>
                             </div>
-                            <button className="refresh-btn" onClick={fetchMyProducts} disabled={loading}>
+                            <button className="refresh-btn" onClick={isCustomer ? fetchCustomerClaimedProducts : fetchMyProducts} disabled={loading}>
                                 <motion.span
                                     animate={loading ? { rotate: 360 } : {}}
                                     transition={loading ? { duration: 1, repeat: Infinity, ease: "linear" } : {}}

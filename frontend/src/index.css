@@ -468,7 +468,7 @@ body::after { animation: orb-drift 12s ease-in-out infinite; }
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 .page-container {
   min-height: 100vh;
-  padding-top: var(--nav-height);
+  padding-top: calc(var(--nav-height) + 18px);
 }
 .content-container {
   max-width: 1280px;
