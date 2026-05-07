@@ -36,17 +36,15 @@ const userSchema = new mongoose.Schema({
     },
     certificate: {
         filename: String,
+        path: String,      // Pinata IPFS gateway URL (https://gateway.pinata.cloud/ipfs/...)
+        ipfsHash: String,  // Raw IPFS CID stored for blockchain verification
         uploadedAt: Date,
         digitalSignature: {
-            verified: {
-                type: Boolean,
-                default: false
-            },
+            verified: { type: Boolean, default: false },
             verifiedAt: Date,
             signatureCount: Number,
             details: mongoose.Schema.Types.Mixed
         }
-        // Note: IPFS hash is stored on blockchain, not in MongoDB
     },
     walletAddress: {
         type: String,

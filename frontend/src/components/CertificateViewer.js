@@ -63,8 +63,16 @@ const CertificateViewer = ({ productHistory, productId, onClose }) => {
     };
 
     const handleDownload = (url, filename) => {
+        if (!url) return;
+        // If already a full URL (IPFS gateway), open directly
+        if (url.startsWith('http://') || url.startsWith('https://')) {
+            window.open(url, '_blank');
+            return;
+        }
+        // Legacy: relative path — prepend backend base URL
+        const baseUrl = (process.env.REACT_APP_API_URL || 'http://localhost:5000/api').replace('/api', '');
         const link = document.createElement('a');
-        link.href = `${(process.env.REACT_APP_API_URL || 'http://localhost:5000/api').replace('/api', '')}${url}`;
+        link.href = `${baseUrl}${url}`;
         link.download = filename;
         link.target = '_blank';
         document.body.appendChild(link);

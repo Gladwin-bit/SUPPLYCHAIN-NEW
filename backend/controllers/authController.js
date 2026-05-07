@@ -122,9 +122,11 @@ export const register = async (req, res) => {
 
                 console.log('✅ Certificate uploaded to IPFS:', ipfsHash);
 
-                // 2. Store metadata in MongoDB (IPFS hash will be on blockchain)
+                // 2. Store metadata + IPFS info in MongoDB
                 userData.certificate = {
-                    filename: certificateFile.filename,
+                    filename: certificateFile.originalname || certificateFile.filename || 'certificate',
+                    ipfsHash: ipfsHash,
+                    path: ipfsResult.ipfsUrl,  // Full Pinata gateway URL
                     uploadedAt: new Date()
                 };
 
