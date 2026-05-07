@@ -60,11 +60,14 @@ export const getCertificatesForProduct = async (req, res) => {
         if (manufacturer.certificate) {
             certData.hasCertificate = true;
 
-            // Use stored IPFS URL (path) if available, otherwise build from ipfsHash
-            const certUrl = manufacturer.certificate.path
-                || (manufacturer.certificate.ipfsHash
-                    ? `https://gateway.pinata.cloud/ipfs/${manufacturer.certificate.ipfsHash}`
-                    : null);
+            let certUrl = manufacturer.certificate.path;
+            
+            // If the path doesn't start with http, and we have an ipfsHash, rebuild it
+            if (certUrl && !certUrl.startsWith('http') && manufacturer.certificate.ipfsHash) {
+                certUrl = `https://gateway.pinata.cloud/ipfs/${manufacturer.certificate.ipfsHash}`;
+            } else if (!certUrl && manufacturer.certificate.ipfsHash) {
+                certUrl = `https://gateway.pinata.cloud/ipfs/${manufacturer.certificate.ipfsHash}`;
+            }
 
             certData.certificate = {
                 filename: manufacturer.certificate.filename || 'certificate',
@@ -83,18 +86,23 @@ export const getCertificatesForProduct = async (req, res) => {
         // ── 4. Build product certificate entry ─────────────────────────────
         let productCertificate = null;
 
-        if (product.productCertificate && product.productCertificate.path) {
+        if (product.productCertificate) {
+            let productCertUrl = null;
             const pcPath = product.productCertificate.path;
+            const pcFilename = product.productCertificate.filename;
 
             // Use the stored path directly if it's already a full URL (IPFS gateway)
-            // Otherwise, treat it as a legacy local path
-            const productCertUrl = pcPath.startsWith('http')
-                ? pcPath
-                : null; // Skip legacy local paths — they don't exist on Railway
+            if (pcPath && pcPath.startsWith('http')) {
+                productCertUrl = pcPath;
+            } 
+            // If it's a legacy local path but we have an IPFS hash in the filename
+            else if (pcFilename && (pcFilename.startsWith('Qm') || pcFilename.startsWith('baf'))) {
+                productCertUrl = `https://gateway.pinata.cloud/ipfs/${pcFilename}`;
+            }
 
             if (productCertUrl) {
                 productCertificate = {
-                    filename: product.productCertificate.filename || 'product-certificate',
+                    filename: pcFilename || 'product-certificate',
                     url: productCertUrl
                 };
                 console.log('✅ Product cert URL:', productCertUrl);

@@ -218,7 +218,7 @@ export default function BulkRegister() {
 
                         // Certificate information
                         certificateFilename: upData.filename,
-                        certificatePath: `uploads/product-certificates/${upData.filename}`,
+                        certificatePath: upData.path, // Use the actual IPFS URL
 
                         // Blockchain data
                         txHash: bcResult.txHash,

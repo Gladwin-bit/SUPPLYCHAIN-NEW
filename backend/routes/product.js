@@ -206,7 +206,7 @@ router.post('/bulk-register', async (req, res) => {
             products: batchProducts,
             certificate: {
                 filename: certificateFilename,
-                path: certificatePath || `uploads/product-certificates/${certificateFilename}`,
+                path: certificatePath || '',
                 uploadedAt: new Date()
             },
             currentHandoverKey: sharedHandoverKey,
@@ -263,7 +263,7 @@ router.post('/bulk-register', async (req, res) => {
                         currentHandoverKey: sharedHandoverKey,
                         productCertificate: {
                             filename: certificateFilename,
-                            path: certificatePath || `uploads/product-certificates/${certificateFilename}`,
+                            path: certificatePath || '',
                             uploadedAt: new Date()
                         },
                         blockchainTxHash: txHash
@@ -473,7 +473,7 @@ router.post('/register', async (req, res) => {
                     currentHandoverKey: req.body.currentHandoverKey || null,
                     productCertificate: {
                         filename: certificateFilename,
-                        path: certificatePath || `uploads/product-certificates/${certificateFilename}`,
+                        path: certificatePath || '',
                         uploadedAt: new Date()
                     },
                     blockchainTxHash: txHash,

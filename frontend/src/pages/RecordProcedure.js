@@ -124,6 +124,7 @@ const RecordProcedure = () => {
                     consumerSecretHash,
                     currentHandoverKey: handoverKey,
                     certificateFilename: certFilename,
+                    certificatePath: uploadData.path, // Pass the IPFS URL
                     txHash: result?.txHash || ""
                 })
             });
