@@ -50,7 +50,7 @@ app.use('/api/reports', reportsRoutes);
 app.get('/api/health', (req, res) => {
     res.json({
         success: true,
-        message: 'Supply Chain Backend API is running',
+        message: 'Supply Chain Backend API is running (V2 - Reports Fixed)',
         timestamp: new Date().toISOString()
     });
 });
