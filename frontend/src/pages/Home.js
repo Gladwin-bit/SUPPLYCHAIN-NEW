@@ -852,7 +852,7 @@ const Home = () => {
                         ) : (
                             <div className="strip-actions">
                                 {[
-                                    { to: "/create",  icon: "✨", title: "Register New Saree",  desc: "Mint on-chain", primary: true },
+                                    ...(isManufacturer ? [{ to: "/create",  icon: "✨", title: "Register New Saree",  desc: "Mint on-chain", primary: true }] : []),
                                     { to: "/custody", icon: "📤", title: "Manage Handover",     desc: "Transfer custody" },
                                     { to: "/trace",   icon: "🔍", title: "Trace a Saree",       desc: "Track journey" },
                                 ].map((a, i) => (
