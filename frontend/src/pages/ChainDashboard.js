@@ -459,7 +459,7 @@ const ChainDashboard = () => {
                 provider.getBlock('pending').catch(() => null),
             ]);
             setNetworkData({
-                network: network.name === 'unknown' ? 'Hardhat Local' : network.name,
+                network: network.name === 'unknown' ? 'Sepolia Testnet' : network.name,
                 chainId: network.chainId.toString(),
                 blockNumber,
                 gasPrice: ethers.formatUnits(feeData.gasPrice || 0n, 'gwei'),
@@ -704,7 +704,7 @@ const ChainDashboard = () => {
                     </div>
                     <h1 className="cd-hero-title">Blockchain Dashboard</h1>
                     <p className="cd-hero-sub">
-                        Real-time on-chain data · Kasaragod SareeChain · Local Hardhat Node
+                        Real-time on-chain data · Kasaragod SareeChain · Sepolia Node
                     </p>
                     {networkData && (
                         <div className="cd-hero-pill-row">
@@ -822,8 +822,8 @@ const ChainDashboard = () => {
 
                         {activeTab === 'accounts' && (
                             <>
-                                <SectionHeader icon="👛" title="Hardhat Test Accounts" />
-                                <p className="cd-help-text">Default Hardhat node accounts with their balances, nonce, and assigned roles.</p>
+                                <SectionHeader icon="👛" title="Sepolia Test Accounts" />
+                                <p className="cd-help-text">Default Sepolia node accounts with their balances, nonce, and assigned roles.</p>
                                 <AccountsPanel accounts={accounts} />
                             </>
                         )}

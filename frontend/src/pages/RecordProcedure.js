@@ -698,7 +698,7 @@ const RecordProcedure = () => {
                                 {/* Blockchain confirmation pill */}
                                 <div className="rps-confirm-pill">
                                     <span className="rps-confirm-dot" />
-                                    <span>Transaction confirmed on Hardhat #31337</span>
+                                    <span>Transaction confirmed on Sepolia #11155111</span>
                                 </div>
                             </motion.div>
 

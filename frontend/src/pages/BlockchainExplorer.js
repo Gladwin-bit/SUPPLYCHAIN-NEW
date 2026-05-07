@@ -34,7 +34,7 @@ const BlockchainExplorer = () => {
 
             setStats({
                 latestBlock: blockNumber,
-                network: network.name === 'unknown' ? 'Hardhat Node' : network.name,
+                network: network.name === 'unknown' ? 'Sepolia Node' : network.name,
                 gasPrice: ethers.formatUnits(feeData.gasPrice || 0, 'gwei')
             });
 
@@ -66,7 +66,7 @@ const BlockchainExplorer = () => {
             setLoading(false);
         } catch (error) {
             console.error("Error fetching blockchain data:", error);
-            toast.error("Failed to connect to local Hardhat node");
+            toast.error("Failed to connect to Sepolia network");
             setLoading(false);
         }
     }, []);

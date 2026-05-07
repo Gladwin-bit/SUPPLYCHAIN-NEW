@@ -296,7 +296,7 @@ const TraceProduct = () => {
                                             <span className="bcd-header-title">On-Chain Verification Data</span>
                                             <span className="bcd-network-badge">
                                                 <span className="bcd-net-dot" />
-                                                Hardhat · Chain 31337
+                                                Sepolia Testnet · Chain 11155111
                                             </span>
                                         </div>
 
@@ -321,7 +321,7 @@ const TraceProduct = () => {
 
                                                 <div className="bcd-row">
                                                     <span className="bcd-key">Network</span>
-                                                    <span className="bcd-val">Hardhat Local (Chain ID: 31337)</span>
+                                                    <span className="bcd-val">Sepolia Testnet (Chain ID: 11155111)</span>
                                                 </div>
 
                                                 <div className="bcd-row">
