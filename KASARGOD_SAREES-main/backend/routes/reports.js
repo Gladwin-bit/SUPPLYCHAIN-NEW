@@ -5,7 +5,7 @@ const router = express.Router();
 
 // Logging middleware for this router
 router.use((req, res, next) => {
-    console.log(`[ReportsRouter] ${req.method} ${req.url}`);
+    console.log(`[ReportsRouter] Incoming: ${req.method} ${req.url}`);
     next();
 });
 
@@ -57,7 +57,7 @@ router.patch('/:id/status', async (req, res) => {
 
 /**
  * @route   GET /api/reports
- * @desc    Get all reports
+ * @desc    Get all reports (manufacturer dashboard)
  * @access  Public
  */
 router.get('/', async (req, res) => {
@@ -140,6 +140,15 @@ router.post('/', async (req, res) => {
         console.error('[ReportsRouter] Create report error:', err);
         res.status(500).json({ success: false, error: err.message });
     }
+});
+
+// Diagnostic catch-all
+router.all('*', (req, res) => {
+    console.log(`[ReportsRouter] No match for: ${req.method} ${req.url}`);
+    res.status(404).json({
+        success: false,
+        message: `Route ${req.url} not found in ReportsRouter`
+    });
 });
 
 export default router;
