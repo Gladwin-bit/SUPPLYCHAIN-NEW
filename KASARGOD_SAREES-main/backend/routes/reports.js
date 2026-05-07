@@ -113,6 +113,7 @@ router.patch('/:id/status', async (req, res) => {
     try {
         const { id } = req.params;
         const { status, resolvedNote } = req.body;
+        console.log(`Updating report ${id} to status: ${status}`);
 
         const validStatuses = ['open', 'under_review', 'resolved', 'dismissed'];
         if (!validStatuses.includes(status)) {
