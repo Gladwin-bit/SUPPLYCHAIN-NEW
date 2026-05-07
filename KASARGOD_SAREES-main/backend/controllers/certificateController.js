@@ -2,8 +2,16 @@ import User from '../models/User.js';
 
 /**
  * @route   GET /api/certificates/:productId
- * @desc    Get manufacturer certificate (simplified - no blockchain)
+ * @desc    Get manufacturer + product certificate for a given productId
  * @access  Public
+ *
+ * Strategy (production-safe):
+ *  1. Look up the Product record in MongoDB → gives us manufacturerAddress + productCertificate
+ *  2. Look up the Manufacturer User record in MongoDB → gives us their name / cert / idProof
+ *  3. Optionally try to fetch the manufacturer's IPFS cert hash from blockchain (Sepolia)
+ *  4. Return everything to the frontend
+ *
+ * This no longer depends on a local Hardhat node (localhost:8545).
  */
 export const getCertificatesForProduct = async (req, res) => {
     try {
@@ -11,136 +19,154 @@ export const getCertificatesForProduct = async (req, res) => {
         console.log('=== CERTIFICATE REQUEST ===');
         console.log('Product ID:', productId);
 
-        // Import contract configuration
-        const { ethers } = await import('ethers');
-        const fs = await import('fs');
-        const path = await import('path');
-        const { fileURLToPath } = await import('url');
-        const { dirname } = await import('path');
+        // ── 1. Look up the Product in MongoDB ─────────────────────────────────────
+        const Product = (await import('../models/Product.js')).default;
 
-        const __filename = fileURLToPath(import.meta.url);
-        const __dirname = dirname(__filename);
+        // productId might be numeric or a formatted string; try numeric first
+        const numericId = parseInt(productId, 10);
+        let product = null;
 
-        // Load contract ABI and address - go up from backend/controllers to project root
-        const projectRoot = path.join(__dirname, '..', '..');
-        const contractAddressPath = path.join(projectRoot, 'frontend', 'src', 'contract-address.json');
-        const contractABIPath = path.join(projectRoot, 'frontend', 'src', 'SupplyChain.json');
+        if (!isNaN(numericId)) {
+            product = await Product.findOne({ productId: numericId }).lean();
+        }
 
-        console.log('Contract address path:', contractAddressPath);
-        console.log('Contract ABI path:', contractABIPath);
+        // ── 2. Determine manufacturer address ─────────────────────────────────────
+        //    Fallback: try to read the blockchain only if we have an RPC URL configured.
+        let manufacturerAddress = product?.manufacturerAddress || null;
 
-        console.log('Loading contract configuration...');
-        const addressData = JSON.parse(fs.readFileSync(contractAddressPath, 'utf8'));
-        const contractAddress = addressData.address;
+        if (!manufacturerAddress) {
+            // Try blockchain as fallback (requires ALCHEMY_RPC_URL or RPC_URL env var)
+            const rpcUrl = process.env.ALCHEMY_RPC_URL || process.env.RPC_URL || null;
+            if (rpcUrl) {
+                try {
+                    const { ethers } = await import('ethers');
+                    const fs = await import('fs');
+                    const path = await import('path');
+                    const { fileURLToPath } = await import('url');
+                    const { dirname } = await import('path');
 
-        const abiData = JSON.parse(fs.readFileSync(contractABIPath, 'utf8'));
-        const contractABI = abiData.abi;
+                    const __filename = fileURLToPath(import.meta.url);
+                    const __dirname = dirname(__filename);
+                    const projectRoot = path.join(__dirname, '..', '..');
+                    const contractAddressPath = path.join(projectRoot, 'frontend', 'src', 'contract-address.json');
+                    const contractABIPath = path.join(projectRoot, 'frontend', 'src', 'SupplyChain.json');
 
-        // Connect to blockchain
-        console.log('Connecting to blockchain...');
-        const provider = new ethers.JsonRpcProvider('http://127.0.0.1:8545');
-        const contract = new ethers.Contract(contractAddress, contractABI, provider);
+                    const addressData = JSON.parse(fs.readFileSync(contractAddressPath, 'utf8'));
+                    const abiData = JSON.parse(fs.readFileSync(contractABIPath, 'utf8'));
 
-        // Get product history to find manufacturer (first entry)
-        console.log('Fetching product history...');
-        const history = await contract.getHistory(productId);
+                    const provider = new ethers.JsonRpcProvider(rpcUrl);
+                    const contract = new ethers.Contract(addressData.address, abiData.abi, provider);
 
-        if (!history || history.length === 0) {
-            console.log('No history found for product');
+                    const history = await contract.getHistory(numericId);
+                    if (history && history.length > 0) {
+                        manufacturerAddress = history[0].actor.toLowerCase();
+                        console.log('Manufacturer address from blockchain history:', manufacturerAddress);
+                    }
+                } catch (blockchainErr) {
+                    console.warn('Blockchain fallback failed for manufacturerAddress:', blockchainErr.message);
+                }
+            } else {
+                console.warn('No RPC_URL configured — cannot look up manufacturer from blockchain.');
+            }
+        }
+
+        if (!manufacturerAddress) {
             return res.status(404).json({
                 success: false,
-                message: 'Product not found or has no history'
+                message: 'Could not determine manufacturer for this product. Product may not be registered in the database.'
             });
         }
 
-        // Get manufacturer wallet address (first entry in history is the creator)
-        const manufacturerAddress = history[0].actor.toLowerCase();
-        console.log('Manufacturer address from blockchain:', manufacturerAddress);
-
-        // Find manufacturer in database by wallet address (case-insensitive)
-        console.log('Searching for manufacturer in database...');
-        const manufacturer = await User.findOne({
+        // ── 3. Look up the Manufacturer User in MongoDB ───────────────────────────
+        let manufacturer = await User.findOne({
             walletAddress: { $regex: new RegExp(`^${manufacturerAddress}$`, 'i') }
-        }).select('name email role walletAddress certificate idProof');
+        }).select('name email role walletAddress certificate idProof').lean();
 
-        // If not found with regex, try exact match
         if (!manufacturer) {
-            console.log('Not found with regex, trying exact match...');
-            const exactMatch = await User.findOne({
-                walletAddress: manufacturerAddress
-            }).select('name email role walletAddress certificate idProof');
-
-            if (!exactMatch) {
-                // Debug: Show all manufacturers in database
-                console.log('Still not found. Checking all users with manufacturer role...');
-                const allManufacturers = await User.find({ role: 'manufacturer' })
-                    .select('name walletAddress')
-                    .limit(5);
-                console.log('Manufacturers in database:', allManufacturers.map(m => ({
-                    name: m.name,
-                    wallet: m.walletAddress
-                })));
-
-                console.log('Manufacturer not found in database');
-                return res.status(404).json({
-                    success: false,
-                    message: 'Manufacturer not registered in the system',
-                    debug: {
-                        searchedAddress: manufacturerAddress,
-                        foundManufacturers: allManufacturers.length
-                    }
-                });
-            }
-
-            manufacturer = exactMatch;
+            console.warn('Manufacturer user not found for address:', manufacturerAddress);
+            // Still continue — we can still return the product certificate
         }
 
-        console.log('Using manufacturer:', manufacturer.name);
-
-        const certificateData = {
-            name: manufacturer.name,
-            email: manufacturer.email,
-            role: manufacturer.role,
-            walletAddress: manufacturer.walletAddress,
-            hasCertificate: !!manufacturer.certificate,
-            hasIdProof: !!manufacturer.idProof
-        };
-
-        // Fetch certificate IPFS hash from blockchain
-        try {
-            console.log('Fetching certificate IPFS hash from blockchain...');
-            const ipfsHash = await contract.getUserCertificate(manufacturerAddress);
-
-            if (ipfsHash && ipfsHash.trim() !== '') {
-                console.log('Certificate IPFS hash found:', ipfsHash);
-                certificateData.certificate = {
-                    filename: manufacturer.certificate?.filename || 'certificate.pdf',
-                    uploadedAt: manufacturer.certificate?.uploadedAt,
-                    ipfsHash: ipfsHash,
-                    url: `https://gateway.pinata.cloud/ipfs/${ipfsHash}`
-                };
-            } else if (manufacturer.certificate) {
-                console.log('No IPFS hash on blockchain, using legacy local path');
-                // Fallback for old certificates stored locally (before IPFS migration)
-                certificateData.certificate = {
-                    filename: manufacturer.certificate.filename,
-                    uploadedAt: manufacturer.certificate.uploadedAt,
-                    url: `/uploads/${manufacturer.certificate.filename}`
-                };
+        // ── 4. Build the manufacturer certificate entry ────────────────────────────
+        const certificateData = manufacturer
+            ? {
+                name: manufacturer.name,
+                email: manufacturer.email,
+                role: manufacturer.role,
+                walletAddress: manufacturer.walletAddress,
+                hasCertificate: !!manufacturer.certificate,
+                hasIdProof: !!manufacturer.idProof
             }
-        } catch (blockchainError) {
-            console.error('Error fetching IPFS hash from blockchain:', blockchainError.message);
-            // Fallback to local path if blockchain fetch fails
-            if (manufacturer.certificate) {
-                certificateData.certificate = {
-                    filename: manufacturer.certificate.filename,
-                    uploadedAt: manufacturer.certificate.uploadedAt,
-                    url: `/uploads/${manufacturer.certificate.filename}`
-                };
+            : {
+                name: 'Unknown Manufacturer',
+                email: '',
+                role: 'manufacturer',
+                walletAddress: manufacturerAddress,
+                hasCertificate: false,
+                hasIdProof: false
+            };
+
+        // ── 5. Try to get manufacturer IPFS cert hash from blockchain ──────────────
+        //    Use Sepolia RPC URL from env, fall back gracefully.
+        const rpcUrl = process.env.ALCHEMY_RPC_URL || process.env.RPC_URL || null;
+        if (rpcUrl && manufacturer?.certificate) {
+            try {
+                const { ethers } = await import('ethers');
+                const fs = await import('fs');
+                const path = await import('path');
+                const { fileURLToPath } = await import('url');
+                const { dirname } = await import('path');
+
+                const __filename = fileURLToPath(import.meta.url);
+                const __dirname = dirname(__filename);
+                const projectRoot = path.join(__dirname, '..', '..');
+                const contractAddressPath = path.join(projectRoot, 'frontend', 'src', 'contract-address.json');
+                const contractABIPath = path.join(projectRoot, 'frontend', 'src', 'SupplyChain.json');
+
+                const addressData = JSON.parse(fs.readFileSync(contractAddressPath, 'utf8'));
+                const abiData = JSON.parse(fs.readFileSync(contractABIPath, 'utf8'));
+
+                const provider = new ethers.JsonRpcProvider(rpcUrl);
+                const contract = new ethers.Contract(addressData.address, abiData.abi, provider);
+
+                const ipfsHash = await contract.getUserCertificate(manufacturerAddress);
+                if (ipfsHash && ipfsHash.trim() !== '') {
+                    console.log('IPFS hash found for manufacturer:', ipfsHash);
+                    certificateData.hasCertificate = true;
+                    certificateData.certificate = {
+                        filename: manufacturer.certificate?.filename || 'manufacturer-certificate.pdf',
+                        uploadedAt: manufacturer.certificate?.uploadedAt,
+                        ipfsHash,
+                        url: `https://gateway.pinata.cloud/ipfs/${ipfsHash}`
+                    };
+                } else {
+                    throw new Error('No IPFS hash on chain');
+                }
+            } catch (ipfsErr) {
+                console.warn('Could not fetch IPFS cert hash:', ipfsErr.message);
+                // Fallback: serve the locally stored manufacturer certificate
+                if (manufacturer?.certificate?.filename) {
+                    certificateData.hasCertificate = true;
+                    certificateData.certificate = {
+                        filename: manufacturer.certificate.filename,
+                        uploadedAt: manufacturer.certificate.uploadedAt,
+                        url: `/uploads/${manufacturer.certificate.filename}`
+                    };
+                }
             }
+        } else if (manufacturer?.certificate?.filename) {
+            // No RPC configured → fall back to local file path
+            certificateData.hasCertificate = true;
+            certificateData.certificate = {
+                filename: manufacturer.certificate.filename,
+                uploadedAt: manufacturer.certificate.uploadedAt,
+                url: `/uploads/${manufacturer.certificate.filename}`
+            };
         }
 
-        if (manufacturer.idProof) {
+        // ID proof (always from MongoDB — no IPFS for this)
+        if (manufacturer?.idProof?.filename) {
+            certificateData.hasIdProof = true;
             certificateData.idProof = {
                 filename: manufacturer.idProof.filename,
                 uploadedAt: manufacturer.idProof.uploadedAt,
@@ -148,53 +174,72 @@ export const getCertificatesForProduct = async (req, res) => {
             };
         }
 
-        // Get product certificate from blockchain
-        console.log('Fetching product from blockchain...');
-        try {
-            const product = await contract.getProduct(productId);
-            console.log('Product data from blockchain:', {
-                id: product.id?.toString(),
-                name: product.name,
-                exists: product.exists,
-                productCertificate: product.productCertificate
-            });
+        // ── 6. Product certificate (uploaded by manufacturer when creating product) ─
+        //    PRIMARY source: MongoDB Product record
+        //    FALLBACK: blockchain productCertificate field
+        let productCertResponse = null;
 
-            const productCertificate = product.productCertificate || '';
-
-            console.log('Product certificate filename:', productCertificate);
-            console.log('Product certificate exists:', !!productCertificate);
-
-            const response = {
-                success: true,
-                productId,
-                certificates: [certificateData],
-                manufacturer: certificateData
+        if (product?.productCertificate?.filename) {
+            // ✅ Preferred: from MongoDB — always available in production
+            productCertResponse = {
+                filename: product.productCertificate.filename,
+                uploadedAt: product.productCertificate.uploadedAt,
+                url: `/uploads/product-certificates/${product.productCertificate.filename}`
             };
+            console.log('✅ Product certificate found in MongoDB:', product.productCertificate.filename);
+        } else if (rpcUrl) {
+            // Fallback: try to read from blockchain productCertificate field
+            try {
+                const { ethers } = await import('ethers');
+                const fs = await import('fs');
+                const path = await import('path');
+                const { fileURLToPath } = await import('url');
+                const { dirname } = await import('path');
 
-            // Add product certificate if it exists
-            if (productCertificate && productCertificate.trim() !== '') {
-                response.productCertificate = {
-                    filename: productCertificate,
-                    url: `/uploads/product-certificates/${productCertificate}`
-                };
-                console.log('✅ Product certificate added to response');
-            } else {
-                console.log('⚠️ No product certificate found for this product');
+                const __filename = fileURLToPath(import.meta.url);
+                const __dirname = dirname(__filename);
+                const projectRoot = path.join(__dirname, '..', '..');
+                const contractAddressPath = path.join(projectRoot, 'frontend', 'src', 'contract-address.json');
+                const contractABIPath = path.join(projectRoot, 'frontend', 'src', 'SupplyChain.json');
+
+                const addressData = JSON.parse(fs.readFileSync(contractAddressPath, 'utf8'));
+                const abiData = JSON.parse(fs.readFileSync(contractABIPath, 'utf8'));
+
+                const provider = new ethers.JsonRpcProvider(rpcUrl);
+                const contract = new ethers.Contract(addressData.address, abiData.abi, provider);
+
+                const blockchainProduct = await contract.getProduct(numericId);
+                const onChainCert = blockchainProduct.productCertificate || '';
+                if (onChainCert && onChainCert.trim() !== '') {
+                    productCertResponse = {
+                        filename: onChainCert,
+                        url: `/uploads/product-certificates/${onChainCert}`
+                    };
+                    console.log('✅ Product certificate found on blockchain:', onChainCert);
+                }
+            } catch (certErr) {
+                console.warn('Could not fetch product certificate from blockchain:', certErr.message);
             }
-
-            console.log('Sending certificate data for:', manufacturer.name);
-            res.json(response);
-        } catch (blockchainError) {
-            console.error('Blockchain fetch error:', blockchainError);
-            // Continue without product certificate
-            console.log('Sending response without product certificate');
-            res.json({
-                success: true,
-                productId,
-                certificates: [certificateData],
-                manufacturer: certificateData
-            });
         }
+
+        if (!productCertResponse) {
+            console.log('⚠️ No product certificate found for product:', productId);
+        }
+
+        // ── 7. Send the response ──────────────────────────────────────────────────
+        const response = {
+            success: true,
+            productId,
+            certificates: manufacturer ? [certificateData] : [],
+            manufacturer: certificateData
+        };
+
+        if (productCertResponse) {
+            response.productCertificate = productCertResponse;
+        }
+
+        console.log('Sending certificate response for product:', productId);
+        return res.json(response);
 
     } catch (error) {
         console.error('=== CERTIFICATE ERROR ===');
@@ -215,11 +260,13 @@ export const getCertificatesForProduct = async (req, res) => {
  */
 export const getCertificateFile = async (req, res) => {
     try {
+        const fs = await import('fs');
+        const path = await import('path');
+
         const { filename } = req.params;
         const uploadsDir = process.env.UPLOAD_PATH || './uploads';
         const filePath = path.join(uploadsDir, filename);
 
-        // Check if file exists
         if (!fs.existsSync(filePath)) {
             return res.status(404).json({
                 success: false,
@@ -227,7 +274,6 @@ export const getCertificateFile = async (req, res) => {
             });
         }
 
-        // Send file
         res.sendFile(path.resolve(filePath));
 
     } catch (error) {
