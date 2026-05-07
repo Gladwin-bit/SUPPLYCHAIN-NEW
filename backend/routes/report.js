@@ -71,4 +71,42 @@ router.get('/', async (req, res) => {
     }
 });
 
+// GET /api/reports/count  — get number of open reports
+router.get('/count', async (req, res) => {
+    try {
+        const openCount = await Report.countDocuments({ status: 'open' });
+        res.json({ success: true, openCount });
+    } catch (err) {
+        console.error('[Reports] GET /api/reports/count error:', err);
+        res.status(500).json({ success: false, error: 'Server error' });
+    }
+});
+
+// PATCH /api/reports/:id/status  — update report status
+router.patch('/:id/status', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { status, resolvedNote } = req.body;
+
+        const validStatuses = ['open', 'under_review', 'resolved', 'dismissed'];
+        if (!validStatuses.includes(status)) {
+            return res.status(400).json({ success: false, error: 'Invalid status value' });
+        }
+
+        const update = { status };
+        if (status === 'resolved' || status === 'dismissed') {
+            update.resolvedAt = new Date();
+            if (resolvedNote) update.resolvedNote = resolvedNote;
+        }
+
+        const report = await Report.findByIdAndUpdate(id, update, { new: true });
+        if (!report) return res.status(404).json({ success: false, error: 'Report not found' });
+
+        res.json({ success: true, report });
+    } catch (err) {
+        console.error('[Reports] PATCH /api/reports/:id/status error:', err);
+        res.status(500).json({ success: false, error: 'Server error' });
+    }
+});
+
 export default router;
