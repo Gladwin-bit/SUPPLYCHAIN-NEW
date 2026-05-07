@@ -38,6 +38,26 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Routes
+import Report from './models/Report.js';
+app.get('/api/reports/count', async (req, res) => {
+    try {
+        const openCount = await Report.countDocuments({ status: 'open' });
+        res.json({ success: true, openCount });
+    } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+app.patch('/api/reports/:id/status', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { status, resolvedNote } = req.body;
+        const update = { status };
+        if (status === 'resolved' || status === 'dismissed') update.resolvedAt = new Date();
+        const report = await Report.findByIdAndUpdate(id, update, { new: true });
+        if (!report) return res.status(404).json({ success: false, message: 'Report not found' });
+        res.json({ success: true, report });
+    } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
 app.use('/api/auth', authRoutes);
 app.use('/api/certificates', certificateRoutes);
 app.use('/api/products', productRoutes);
