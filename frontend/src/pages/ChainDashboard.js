@@ -8,7 +8,7 @@ import contractAddressData from '../contract-address.json';
 import SupplyChainArtifact from '../SupplyChain.json';
 import './ChainDashboard.css';
 
-const RPC_URL = 'http://127.0.0.1:8545';
+const RPC_URL = process.env.REACT_APP_RPC_URL || 'http://127.0.0.1:8545';
 const CONTRACT_ADDRESS = contractAddressData.address;
 
 const ROLE_NAMES = {

@@ -27,7 +27,7 @@ const BlockchainExplorer = () => {
 
     const fetchBlockchainData = useCallback(async () => {
         try {
-            const provider = new ethers.JsonRpcProvider("http://127.0.0.1:8545");
+            const provider = new ethers.JsonRpcProvider(process.env.REACT_APP_RPC_URL || "http://127.0.0.1:8545");
             const blockNumber = await provider.getBlockNumber();
             const network = await provider.getNetwork();
             const feeData = await provider.getFeeData();
