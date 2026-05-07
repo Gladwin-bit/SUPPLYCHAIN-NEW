@@ -88,6 +88,16 @@ export default function ReportsPanel() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ status: newStatus }),
             });
+
+            if (!res.ok) {
+                const errorText = await res.text();
+                let errorData;
+                try { errorData = JSON.parse(errorText); } catch { }
+                console.error("Backend error status:", res.status, errorText);
+                toast.error(errorData?.message || `Error ${res.status}: Failed to update status`);
+                return;
+            }
+
             const data = await res.json();
             if (data.success) {
                 setReports(prev =>
@@ -98,7 +108,6 @@ export default function ReportsPanel() {
                 }
                 toast.success(`Report marked as ${STATUS_LABELS[newStatus]}`);
             } else {
-                console.error("Backend error:", data);
                 toast.error(data.message || "Failed to update report status");
             }
         } catch (err) {
