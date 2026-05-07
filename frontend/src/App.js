@@ -12,6 +12,7 @@ import { ConnectButton } from './components/ConnectButton';
 import ProtectedRoute from './components/ProtectedRoute';
 import NextStepBanner from './components/NextStepBanner';
 import BlockchainBg from './components/BlockchainBg';
+import ReportsPanel from './components/ReportsPanel';
 import './App.css';
 import './components/NavBar.css';
 
@@ -130,6 +131,9 @@ function Navbar() {
                                 <span className="user-role">{user.role}</span>
                             </div>
                         )}
+
+                        {/* Bell icon — manufacturers only */}
+                        {role === 'manufacturer' && <ReportsPanel />}
 
                         {account ? (
                             <div className="wallet-info">

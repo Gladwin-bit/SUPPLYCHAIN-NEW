@@ -13,6 +13,7 @@ import productRoutes from './routes/product.js';
 import batchRoutes from './routes/batch.js';
 import signatureRoutes from './routes/signature.js';
 import emailRoutes from './routes/email.js';
+import reportsRoutes from './routes/reports.js';
 
 // Load environment variables
 dotenv.config();
@@ -43,6 +44,7 @@ app.use('/api/products', productRoutes);
 app.use('/api/batch', batchRoutes);
 app.use('/api/signature', signatureRoutes);
 app.use('/api/email', emailRoutes);
+app.use('/api/reports', reportsRoutes);
 
 // Health check route
 app.get('/api/health', (req, res) => {
