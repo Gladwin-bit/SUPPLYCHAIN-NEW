@@ -23,6 +23,9 @@ const generateToken = (userId) => {
 export const register = async (req, res) => {
     try {
         let { email, password, name, role, walletAddress } = req.body;
+        if (email) email = email.trim();
+        if (name) name = name.trim();
+        if (password) password = password.trim();
         if (role) role = role.trim();
 
         // Validate required fields
@@ -216,7 +219,9 @@ export const register = async (req, res) => {
  */
 export const login = async (req, res) => {
     try {
-        const { email, password } = req.body;
+        let { email, password } = req.body;
+        email = email?.trim();
+        password = password?.trim();
 
         // Validate input
         if (!email || !password) {
@@ -227,7 +232,8 @@ export const login = async (req, res) => {
         }
 
         // Find user and include password field
-        const user = await User.findOne({ email: email.toLowerCase() }).select('+password');
+        const normalizedEmail = email.toLowerCase();
+        const user = await User.findOne({ email: normalizedEmail }).select('+password');
 
         if (!user) {
             return res.status(401).json({
@@ -245,7 +251,15 @@ export const login = async (req, res) => {
         }
 
         // Verify password
-        const isPasswordValid = await user.comparePassword(password);
+        let isPasswordValid = await user.comparePassword(password);
+
+        // Backward compatibility for legacy users whose password may have been stored unhashed.
+        // On successful legacy match, upgrade to bcrypt hash transparently.
+        if (!isPasswordValid && user.password === password) {
+            user.password = password;
+            await user.save();
+            isPasswordValid = true;
+        }
 
         if (!isPasswordValid) {
             return res.status(401).json({

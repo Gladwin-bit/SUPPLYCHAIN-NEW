@@ -370,7 +370,12 @@ const ManageCustody = () => {
             await checkProduct(false);
         } catch (e) {
             console.error(e);
-            setStatus(`❌ Transfer Failed: ${e.message}`);
+            const msg = e?.reason || e?.error?.message || e?.message || "Transfer failed";
+            if (typeof msg === "string" && msg.toLowerCase().includes("invalid handover key")) {
+                setStatus("❌ Handover key mismatch. Please check you entered the latest key (no spaces) and try again.");
+            } else {
+                setStatus(`❌ Transfer Failed: ${msg}`);
+            }
         } finally {
             setLoading(false);
         }
@@ -416,7 +421,12 @@ const ManageCustody = () => {
             setBulkLocation("");
         } catch (e) {
             console.error(e);
-            setBulkStatus(`❌ Bulk Transfer Failed: ${e.reason || e.message}`);
+            const msg = e?.reason || e?.error?.message || e?.message || "Bulk transfer failed";
+            if (typeof msg === "string" && msg.toLowerCase().includes("invalid handover key")) {
+                setBulkStatus("❌ Handover key mismatch. Please verify you have the latest batch handover key (no spaces) and try again.");
+            } else {
+                setBulkStatus(`❌ Bulk Transfer Failed: ${msg}`);
+            }
         } finally {
             setBulkLoading(false);
         }

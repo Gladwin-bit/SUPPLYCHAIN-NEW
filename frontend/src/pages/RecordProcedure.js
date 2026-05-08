@@ -81,7 +81,14 @@ const RecordProcedure = () => {
         setLoading(true); setStatus(""); setCreatedProduct(null);
 
         try {
-            const hasManufacturerRole = await hasRole(ROLES.MANUFACTURER, account);
+            let hasManufacturerRole = false;
+            try {
+                hasManufacturerRole = await hasRole(ROLES.MANUFACTURER, account);
+            } catch (roleErr) {
+                setStatus(`❌ Role check failed: ${roleErr.message || "Unable to verify MANUFACTURER role"}`);
+                setLoading(false);
+                return;
+            }
             if (!hasManufacturerRole) {
                 setStatus("⛔️ Your wallet does not have MANUFACTURER permissions. Contact admin.");
                 setLoading(false);

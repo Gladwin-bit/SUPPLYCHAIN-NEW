@@ -1,5 +1,4 @@
 // App.js - Entry point for Kasaragod Sarees Customer App
-import 'react-native-get-random-values'; // Must be first - polyfill for ethers.js
 import React from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer } from '@react-navigation/native';

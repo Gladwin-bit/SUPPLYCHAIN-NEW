@@ -64,6 +64,18 @@ const productSchema = new mongoose.Schema({
         type: String,
         default: null
     },
+    customerClaim: {
+        isClaimed: { type: Boolean, default: false },
+        customerName: { type: String, default: '' },
+        claimedBy: { type: String, default: '' }, // wallet address
+        claimLocation: { type: String, default: '' },
+        claimedAt: { type: Date, default: null },
+        customerUser: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User',
+            default: null
+        }
+    },
     createdAt: {
         type: Date,
         default: Date.now
@@ -75,6 +87,7 @@ const productSchema = new mongoose.Schema({
 // Index for faster queries
 productSchema.index({ manufacturer: 1, createdAt: -1 });
 productSchema.index({ manufacturerAddress: 1 });
+productSchema.index({ 'customerClaim.customerUser': 1, createdAt: -1 });
 
 const Product = mongoose.model('Product', productSchema);
 

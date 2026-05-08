@@ -77,26 +77,49 @@ export default function HomeScreen({ navigation }) {
       </LinearGradient>
 
       {/* Hero verification card */}
-      <TouchableOpacity
-        style={styles.heroCard}
-        onPress={() => navigation.navigate('Verify')}
-        activeOpacity={0.85}
-      >
+      <TouchableOpacity onPress={() => navigation.navigate('Verify')} activeOpacity={0.9} style={styles.heroPressable}>
         <LinearGradient
-          colors={['rgba(212,175,55,0.15)', 'rgba(212,175,55,0.05)']}
-          style={styles.heroCardGradient}
+          colors={['rgba(212,175,55,0.55)', 'rgba(212,175,55,0.10)', 'rgba(255,255,255,0.06)']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.heroOuter}
         >
-          <View style={styles.heroCardLeft}>
-            <View style={styles.heroIconBox}>
-              <Ionicons name="shield-checkmark" size={36} color={COLORS.gold} />
+          <LinearGradient
+            colors={['#121016', '#0a0a0f']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.heroInner}
+          >
+            <View style={styles.heroRow}>
+              <View style={styles.heroIconWrap}>
+                <LinearGradient
+                  colors={['rgba(212,175,55,0.22)', 'rgba(212,175,55,0.10)']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.heroIconBox}
+                >
+                  <Ionicons name="shield-checkmark" size={30} color={COLORS.gold} />
+                </LinearGradient>
+              </View>
+
+              <View style={styles.heroTextCol}>
+                <Text style={styles.heroCardLabel}>START VERIFICATION</Text>
+                <Text style={styles.heroCardTitle}>Verify Your Saree</Text>
+                <Text style={styles.heroCardDesc}>Scan QR or enter product ID</Text>
+              </View>
+
+              <View style={styles.heroCtaWrap}>
+                <LinearGradient
+                  colors={[COLORS.gold, COLORS.goldLight]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.heroCtaBtn}
+                >
+                  <Ionicons name="arrow-forward" size={18} color="#0a0a0f" />
+                </LinearGradient>
+              </View>
             </View>
-            <View>
-              <Text style={styles.heroCardLabel}>START VERIFICATION</Text>
-              <Text style={styles.heroCardTitle}>Verify Your Saree</Text>
-              <Text style={styles.heroCardDesc}>Scan QR or enter product ID</Text>
-            </View>
-          </View>
-          <Ionicons name="arrow-forward-circle" size={32} color={COLORS.gold} />
+          </LinearGradient>
         </LinearGradient>
       </TouchableOpacity>
 
@@ -136,7 +159,7 @@ export default function HomeScreen({ navigation }) {
             title="Chain"
             description="Full custody history"
             accent={COLORS.info}
-            onPress={() => navigation.navigate('Verify')}
+            onPress={() => navigation.navigate('TraceJourney')}
           />
           <FeatureCard
             icon="document-text"
@@ -147,10 +170,10 @@ export default function HomeScreen({ navigation }) {
           />
           <FeatureCard
             icon="person"
-            title="Owner"
-            description="Claim status & details"
+            title="My Products"
+            description="Claimed items history"
             accent={COLORS.warning}
-            onPress={() => navigation.navigate('Verify')}
+            onPress={() => navigation.navigate('MyProducts')}
           />
         </View>
       </View>
@@ -201,37 +224,55 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   trustBadgeText: { color: COLORS.textSecondary, fontSize: FONTS.sizes.xs },
-  heroCard: {
+  heroPressable: {
     marginHorizontal: SPACING.lg,
     marginBottom: SPACING.lg,
+  },
+  heroOuter: {
     borderRadius: RADIUS.xl,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: COLORS.borderGold,
+    padding: 1,
     shadowColor: COLORS.gold,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 12,
-    elevation: 6,
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.18,
+    shadowRadius: 18,
+    elevation: 10,
   },
-  heroCardGradient: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: SPACING.lg,
+  heroInner: {
+    borderRadius: RADIUS.xl,
+    paddingVertical: 18,
+    paddingHorizontal: 18,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
+    overflow: 'hidden',
   },
-  heroCardLeft: { flexDirection: 'row', alignItems: 'center', gap: SPACING.md, flex: 1 },
+  heroRow: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+  heroIconWrap: { justifyContent: 'center' },
   heroIconBox: {
-    width: 60,
-    height: 60,
-    borderRadius: RADIUS.lg,
-    backgroundColor: 'rgba(212,175,55,0.15)',
+    width: 58,
+    height: 58,
+    borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(212,175,55,0.28)',
   },
-  heroCardLabel: { fontSize: FONTS.sizes.xs, color: COLORS.gold, fontWeight: '700', letterSpacing: 1.5 },
-  heroCardTitle: { fontSize: FONTS.sizes.lg, fontWeight: '800', color: COLORS.textPrimary },
-  heroCardDesc: { fontSize: FONTS.sizes.sm, color: COLORS.textSecondary },
+  heroTextCol: { flex: 1, gap: 2 },
+  heroCardLabel: { fontSize: FONTS.sizes.xs, color: COLORS.gold, fontWeight: '800', letterSpacing: 2.2, opacity: 0.95 },
+  heroCardTitle: { fontSize: 22, fontWeight: '900', color: COLORS.textPrimary, letterSpacing: -0.2 },
+  heroCardDesc: { fontSize: FONTS.sizes.sm, color: COLORS.textSecondary, marginTop: 1, opacity: 0.95 },
+  heroCtaWrap: { alignItems: 'flex-end', justifyContent: 'center' },
+  heroCtaBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: COLORS.gold,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.25,
+    shadowRadius: 14,
+    elevation: 12,
+  },
   section: { paddingHorizontal: SPACING.lg, marginBottom: SPACING.lg },
   sectionTitle: {
     fontSize: FONTS.sizes.lg,

@@ -244,7 +244,30 @@ export const SupplyChainProvider = ({ children }) => {
     const hasRole = async (role, address) => {
         if (!contract && !readOnlyContract) return false;
         const target = contract || readOnlyContract;
-        return await target.hasRole(ROLES[role] || role, address);
+
+        try {
+            return await target.hasRole(ROLES[role] || role, address);
+        } catch (err) {
+            if (err?.code === "CALL_EXCEPTION") {
+                try {
+                    const provider = target.runner?.provider;
+                    if (provider) {
+                        const deployedCode = await provider.getCode(contractAddress);
+                        if (!deployedCode || deployedCode === "0x") {
+                            throw new Error("Contract not found on current network. Switch wallet to Sepolia and retry.");
+                        }
+                    }
+                } catch (networkErr) {
+                    if (networkErr instanceof Error) {
+                        throw networkErr;
+                    }
+                }
+
+                throw new Error("Role check failed on-chain. Contract/ABI may be out of sync; verify deployed contract and ABI.");
+            }
+
+            throw err;
+        }
     };
 
     return (

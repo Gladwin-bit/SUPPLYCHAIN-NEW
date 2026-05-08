@@ -14,6 +14,8 @@ import RegisterScreen from '../screens/RegisterScreen';
 import HomeScreen from '../screens/HomeScreen';
 import VerifyScreen from '../screens/VerifyScreen';
 import ProfileScreen from '../screens/ProfileScreen';
+import MyProductsScreen from '../screens/MyProductsScreen';
+import TraceJourneyScreen from '../screens/TraceJourneyScreen';
 
 import { COLORS } from '../theme/colors';
 
@@ -31,6 +33,8 @@ function CustomerTabs() {
             iconName = focused ? 'home' : 'home-outline';
           } else if (route.name === 'Verify') {
             iconName = focused ? 'shield-checkmark' : 'shield-checkmark-outline';
+          } else if (route.name === 'MyProducts') {
+            iconName = focused ? 'cube' : 'cube-outline';
           } else if (route.name === 'Profile') {
             iconName = focused ? 'person' : 'person-outline';
           }
@@ -67,6 +71,11 @@ function CustomerTabs() {
             />
           ),
         }}
+      />
+      <Tab.Screen
+        name="MyProducts"
+        component={MyProductsScreen}
+        options={{ tabBarLabel: 'My Products' }}
       />
       <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
@@ -107,7 +116,10 @@ export default function AppNavigator() {
         </>
       ) : (
         // Customer Tab Navigator
-        <Stack.Screen name="CustomerApp" component={CustomerTabs} />
+        <>
+          <Stack.Screen name="CustomerApp" component={CustomerTabs} />
+          <Stack.Screen name="TraceJourney" component={TraceJourneyScreen} />
+        </>
       )}
     </Stack.Navigator>
   );

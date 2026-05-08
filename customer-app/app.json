@@ -1,41 +1,59 @@
 {
   "expo": {
-    "name": "Kasaragod Sarees",
-    "slug": "kasaragod-saree-verify",
+    "name": "Thread Proof",
+    "slug": "thread-proof",
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
+    "scheme": "threadproof",
     "assetBundlePatterns": ["**/*"],
+    "icon": "./assets/icon.png",
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.kasaragodsarees.verify"
+      "bundleIdentifier": "com.threadproof.app"
     },
     "android": {
-      "package": "com.kasaragodsarees.verify",
+      "package": "com.threadproof.app",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/icon.png",
+        "backgroundColor": "#0a0a0f"
+      },
       "permissions": [
         "CAMERA",
         "READ_EXTERNAL_STORAGE",
         "ACCESS_FINE_LOCATION",
-        "ACCESS_COARSE_LOCATION"
+        "ACCESS_COARSE_LOCATION",
+        "INTERNET"
+      ],
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            { "scheme": "threadproof" },
+            { "scheme": "wc" }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
       ]
     },
     "plugins": [
       [
         "expo-camera",
         {
-          "cameraPermission": "Allow Kasaragod Sarees to scan QR codes for product verification."
+          "cameraPermission": "Allow Thread Proof to scan QR codes for product verification."
         }
       ],
       [
         "expo-location",
         {
-          "locationAlwaysAndWhenInUsePermission": "Allow Kasaragod Sarees to access your location for product verification records."
+          "locationAlwaysAndWhenInUsePermission": "Allow Thread Proof to access your location for product verification records."
         }
       ],
       [
         "expo-image-picker",
         {
-          "photosPermission": "Allow Kasaragod Sarees to access your photos to scan QR codes."
+          "photosPermission": "Allow Thread Proof to access your photos to scan QR codes."
         }
       ]
     ],

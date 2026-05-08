@@ -4,7 +4,7 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Uses EXPO_PUBLIC_ prefix for Expo environment variables
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:5000/api';
+const API_URL = process.env.EXPO_PUBLIC_API_URL || 'https://earnest-love-production-b80e.up.railway.app/api';
 
 const api = axios.create({
   baseURL: API_URL,
@@ -84,4 +84,61 @@ export const batchAPI = {
   },
 };
 
+// Verify & Claim API (backend relay — Method B)
+export const verifyAPI = {
+  /**
+   * Backend relay claim — backend wallet signs claimOwnership()
+   * Requires JWT login (customer must be authenticated)
+   * @param {number} productId
+   * @param {string} secretCode - plaintext scratch-off code
+   * @param {string} location - customer's location
+   */
+  claim: async (productId, secretCode, location) => {
+    const response = await api.post('/verify/claim', {
+      productId,
+      secretCode,
+      location: location || 'Not specified',
+    });
+    return response.data;
+  },
+
+  myProducts: async (limit = 100) => {
+    const response = await api.get(`/verify/my-products?limit=${encodeURIComponent(limit)}`);
+    return response.data;
+  },
+
+  traceProduct: async (productId) => {
+    const response = await api.get(`/verify/trace/${encodeURIComponent(productId)}`);
+    return response.data;
+  },
+
+  syncClaim: async (productId) => {
+    const response = await api.post('/verify/sync-claim', { productId });
+    return response.data;
+  },
+
+  /**
+   * Check relayer wallet status (health)
+   */
+  relayerStatus: async () => {
+    const response = await api.get('/verify/relayer-status');
+    return response.data;
+  },
+};
+
+export const certificateAPI = {
+  getByProduct: async (productId) => {
+    const response = await api.get(`/certificates/${encodeURIComponent(productId)}`);
+    return response.data;
+  },
+};
+
+export const reportsAPI = {
+  create: async (payload) => {
+    const response = await api.post('/reports', payload);
+    return response.data;
+  },
+};
+
 export default api;
+

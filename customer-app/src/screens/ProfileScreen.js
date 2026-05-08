@@ -1,8 +1,8 @@
 // src/screens/ProfileScreen.js
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity,
-  ScrollView, Alert,
+  ScrollView, Modal,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -23,16 +23,10 @@ const InfoRow = ({ icon, label, value }) => (
 
 export default function ProfileScreen() {
   const { user, logout } = useAuth();
+  const [logoutOpen, setLogoutOpen] = useState(false);
 
   const handleLogout = () => {
-    Alert.alert(
-      'Sign Out',
-      'Are you sure you want to sign out?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Sign Out', style: 'destructive', onPress: logout },
-      ]
-    );
+    setLogoutOpen(true);
   };
 
   const initials = user?.name
@@ -91,7 +85,7 @@ export default function ProfileScreen() {
           <View style={styles.divider} />
           <View style={styles.aboutRow}>
             <Text style={styles.aboutLabel}>Blockchain</Text>
-            <Text style={styles.aboutValue}>Polygon Amoy Testnet</Text>
+            <Text style={styles.aboutValue}>Sepolia Testnet</Text>
           </View>
           <View style={styles.divider} />
           <View style={styles.aboutRow}>
@@ -129,6 +123,44 @@ export default function ProfileScreen() {
       <Text style={styles.footer}>
         Kasaragod Sarees Supply Chain Verification{'\n'}Built with ♥ on Blockchain
       </Text>
+
+      {/* Themed Sign Out Modal */}
+      <Modal
+        visible={logoutOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setLogoutOpen(false)}
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalCard}>
+            <View style={styles.modalHeader}>
+              <View style={styles.modalIcon}>
+                <Ionicons name="log-out-outline" size={18} color={COLORS.error} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.modalTitle}>Sign Out</Text>
+                <Text style={styles.modalText}>Are you sure you want to sign out?</Text>
+              </View>
+            </View>
+
+            <View style={styles.modalActionsRow}>
+              <TouchableOpacity style={styles.modalSecondary} onPress={() => setLogoutOpen(false)} activeOpacity={0.85}>
+                <Text style={styles.modalSecondaryText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.modalDanger}
+                onPress={() => {
+                  setLogoutOpen(false);
+                  logout();
+                }}
+                activeOpacity={0.9}
+              >
+                <Text style={styles.modalDangerText}>Sign Out</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </ScrollView>
   );
 }
@@ -184,4 +216,55 @@ const styles = StyleSheet.create({
   },
   logoutText: { color: COLORS.error, fontSize: FONTS.sizes.base, fontWeight: '700' },
   footer: { textAlign: 'center', color: COLORS.textMuted, fontSize: FONTS.sizes.xs, marginTop: SPACING.lg, lineHeight: 20 },
+
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(2,4,10,0.75)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: SPACING.lg,
+  },
+  modalCard: {
+    width: '100%',
+    backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.lg,
+    borderWidth: 1,
+    borderColor: COLORS.borderGold,
+    padding: SPACING.lg,
+    gap: SPACING.md,
+  },
+  modalHeader: { flexDirection: 'row', gap: SPACING.md, alignItems: 'center' },
+  modalIcon: {
+    width: 42,
+    height: 42,
+    borderRadius: RADIUS.md,
+    backgroundColor: COLORS.errorBg,
+    borderWidth: 1,
+    borderColor: 'rgba(239,68,68,0.28)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalTitle: { color: COLORS.textPrimary, fontSize: FONTS.sizes.lg, fontWeight: '900' },
+  modalText: { color: COLORS.textSecondary, fontSize: FONTS.sizes.sm, marginTop: 2, lineHeight: 20 },
+  modalActionsRow: { flexDirection: 'row', gap: SPACING.sm },
+  modalSecondary: {
+    flex: 1,
+    borderRadius: RADIUS.md,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    backgroundColor: COLORS.surfaceElevated,
+    alignItems: 'center',
+    paddingVertical: 12,
+  },
+  modalSecondaryText: { color: COLORS.textPrimary, fontWeight: '800', fontSize: FONTS.sizes.base },
+  modalDanger: {
+    flex: 1,
+    borderRadius: RADIUS.md,
+    borderWidth: 1,
+    borderColor: 'rgba(239,68,68,0.35)',
+    backgroundColor: 'rgba(239,68,68,0.18)',
+    alignItems: 'center',
+    paddingVertical: 12,
+  },
+  modalDangerText: { color: '#ffd7d7', fontWeight: '900', fontSize: FONTS.sizes.base },
 });
