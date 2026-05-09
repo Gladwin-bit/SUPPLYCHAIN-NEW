@@ -279,9 +279,15 @@ export default function VerifyScreen() {
       setProductId(String(scannedId));
       setActiveTab(TABS.MANUAL);
       setError('');
-      Alert.alert('QR Scanned ✓', `Product ID: ${scannedId}\nNow enter your scratch-off code to verify.`);
+      openFeedback(
+        'QR scanned',
+        `Product ID: ${scannedId}\n\nEnter your scratch-off code below, then tap Verify.`
+      );
     } else {
-      Alert.alert('Invalid QR', 'This QR code is not a valid product code.');
+      openFeedback(
+        'Invalid QR',
+        'This QR code does not contain a valid product ID. Try another code or enter the product ID manually.'
+      );
     }
   };
 

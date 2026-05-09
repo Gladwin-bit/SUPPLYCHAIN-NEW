@@ -14,7 +14,10 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL;
+// Keep in sync with src/utils/api.js fallback to avoid "Network Error" when env var
+// isn't injected into an APK build.
+const API_URL =
+  process.env.EXPO_PUBLIC_API_URL || 'https://earnest-love-production-b80e.up.railway.app/api';
 
 /**
  * Verify a product's authenticity by checking the scratch code against the blockchain.
