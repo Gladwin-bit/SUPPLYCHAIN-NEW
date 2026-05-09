@@ -17,7 +17,7 @@ const TABS = [
 ];
 
 const RecordProcedure = () => {
-    const { account, createProduct, hasRole, getFormattedProductId, ROLES } = useSupplyChain();
+    const { account, connectWallet, createProduct, hasRole, getFormattedProductId, ROLES } = useSupplyChain();
 
     // ── Form State ───────────────────────────────────────────────
     const [name,                  setName]                  = useState("");
@@ -490,7 +490,7 @@ const RecordProcedure = () => {
                         <div className="rp-connect-icon">🔌</div>
                         <h3 className="rp-connect-title">Wallet Required</h3>
                         <p className="rp-connect-sub">Connect your MetaMask wallet to access the Saree Registry</p>
-                        <ConnectButton onClick={() => {}} />
+                        <ConnectButton onClick={connectWallet} />
                     </div>
                 ) : (
                     <div className="rp-card">
