@@ -626,10 +626,18 @@
     padding: 12px;
     box-shadow: 0 0 40px rgba(168,85,247,0.25);
 }
-.rps-qr-frame .qr-actions { margin-top: 0.75rem !important; }
-.rps-qr-frame .btn-download {
-    font-size: 0.72rem !important;
-    padding: 0.45rem 1rem !important;
+.rps-qr-frame .qr-actions { 
+    margin-top: 0.75rem !important;
+    gap: 0.5rem !important;
+    flex-direction: column;
+    width: 100%;
+}
+.rps-qr-frame .btn-download,
+.rps-qr-frame .btn-copy {
+    font-size: 0.7rem !important;
+    padding: 0.5rem 1rem !important;
+    width: 100%;
+    justify-content: center;
 }
 
 .rps-qr-hint {

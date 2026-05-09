@@ -1,5 +1,6 @@
 // src/pages/RecordProcedure.js
 import React, { useState, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
 import { useSupplyChain } from "../hooks/useSupplyChain";
 import QRCodeDisplay from "../components/QRCodeDisplay";
@@ -538,6 +539,7 @@ const RecordProcedure = () => {
             </div>
 
             {/* ── Success Screen — full-viewport takeover ──────── */}
+            {createPortal(
             <AnimatePresence>
                 {createdProduct && (
                     <motion.div
@@ -713,6 +715,7 @@ const RecordProcedure = () => {
                     </motion.div>
                 )}
             </AnimatePresence>
+            )}
         </div>
     );
 };
