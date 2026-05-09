@@ -714,7 +714,8 @@ const RecordProcedure = () => {
                         </div>{/* /rps-body */}
                     </motion.div>
                 )}
-            </AnimatePresence>
+            </AnimatePresence>,
+            document.body
             )}
         </div>
     );
