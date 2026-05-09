@@ -74,9 +74,10 @@
 .rp-body {
     flex: 1;
     padding: 2.5rem 1.5rem 4rem;
-    display: flex;
-    justify-content: center;
-    align-items: flex-start;
+    width: 100%;
+    display: grid;
+    justify-items: center;
+    align-items: start;
 }
 
 /* ── Connect wall ────────────────────────────────────────────── */
@@ -98,6 +99,7 @@
 .rp-card {
     width: min(900px, 100%);
     max-width: 900px;
+    margin: 0 auto;
     background: var(--glass-bg);
     border: 1px solid var(--glass-border);
     border-radius: 18px;
