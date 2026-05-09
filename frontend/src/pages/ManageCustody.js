@@ -1,5 +1,5 @@
 // src/pages/ManageCustody.js
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useSupplyChain } from "../hooks/useSupplyChain";
 import QRCodeDisplay from "../components/QRCodeDisplay";
 import { motion } from "framer-motion";
@@ -11,6 +11,7 @@ import { generateShortSecretCode } from "../utils/secretCodeGenerator";
 import { Truck, Upload, Search, Download, ShieldCheck, MapPin, Camera } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import "./ManageCustody.css";
+import { encryptQR, decryptQR } from "../utils/qrEncryption";
 
 import { ConnectButton } from "../components/ConnectButton";
 
@@ -48,6 +49,10 @@ const ManageCustody = () => {
 
     // QR Waybill States
     const [scannedWaybill, setScannedWaybill] = useState(null); // Parsed QR data
+
+    // Encrypted QR state for waybill displays (both single and bulk)
+    const [encryptedSingleQR, setEncryptedSingleQR] = useState('');
+    const [encryptedBulkQR,   setEncryptedBulkQR]   = useState('');
     const [waybillValid, setWaybillValid] = useState(false); // Sender verification status
 
     // Bulk Transfer States
@@ -143,6 +148,31 @@ const ManageCustody = () => {
         };
         fetchStoredDispatchKey();
     }, [bulkBatchNumericId]);
+
+    // ── Encrypt single-product waybill QR whenever nextKey/productDetail changes ──
+    useEffect(() => {
+        if (!nextKey || !productDetail) { setEncryptedSingleQR(''); return; }
+        const payload = JSON.stringify({
+            productId:     productDetail.id,
+            handoverKey:   nextKey,
+            senderAddress: account,
+            timestamp:     Date.now()
+        });
+        encryptQR(payload).then(setEncryptedSingleQR);
+    }, [nextKey, productDetail, account]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    // ── Encrypt bulk waybill QR whenever bulkDispatchKey changes ─────────────────
+    useEffect(() => {
+        if (!bulkDispatchKey) { setEncryptedBulkQR(''); return; }
+        const payload = JSON.stringify({
+            isBulk:        true,
+            batchId:       bulkBatchNumericId || parseInt(bulkBatchId),
+            handoverKey:   bulkDispatchKey,
+            senderAddress: account,
+            timestamp:     Date.now()
+        });
+        encryptQR(payload).then(setEncryptedBulkQR);
+    }, [bulkDispatchKey, bulkBatchNumericId, bulkBatchId, account]); // eslint-disable-line react-hooks/exhaustive-deps
 
     // Auto-reset or refresh on account change
     React.useEffect(() => {
@@ -477,7 +507,9 @@ const ManageCustody = () => {
             const qrCodeSuccessCallback = async (decodedText) => {
                 try {
                     console.log("Bulk QR Code Scanned - Raw Text:", decodedText);
-                    const waybillData = JSON.parse(decodedText);
+                    const decryptedText = await decryptQR(decodedText);
+                    console.log("Bulk QR Decrypted:", decryptedText);
+                    const waybillData = JSON.parse(decryptedText);
                     console.log("Parsed Bulk Waybill Data:", waybillData);
 
                     // Validate required fields for bulk
@@ -566,7 +598,9 @@ const ManageCustody = () => {
             const qrCodeSuccessCallback = async (decodedText) => {
                 try {
                     console.log("QR Code Scanned - Raw Text:", decodedText);
-                    const waybillData = JSON.parse(decodedText);
+                    const decryptedText = await decryptQR(decodedText);
+                    console.log("Single QR Decrypted:", decryptedText);
+                    const waybillData = JSON.parse(decryptedText);
                     console.log("Parsed Waybill Data:", waybillData);
 
                     // Validate required fields
@@ -698,19 +732,17 @@ const ManageCustody = () => {
                                     <div className="digital-waybill" style={{ marginTop: 0 }}>
                                         <div className="qr-frame">
                                             {bulkDispatchKey ? (
+                                                encryptedBulkQR ? (
                                                 <QRCodeSVG
                                                     id="bulk-waybill-qr"
-                                                    value={JSON.stringify({
-                                                        isBulk: true,
-                                                        batchId: bulkBatchNumericId || parseInt(bulkBatchId),
-                                                        handoverKey: bulkDispatchKey,
-                                                        senderAddress: account,
-                                                        timestamp: Date.now()
-                                                    })}
+                                                    value={encryptedBulkQR}
                                                     size={220}
                                                     level="H"
                                                     includeMargin={false}
                                                 />
+                                                ) : (
+                                                    <div style={{ width: 220, height: 220, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#D4AF37', fontSize: '0.8rem', textAlign: 'center' }}>Encrypting…</div>
+                                                )
                                             ) : (
                                                 <div style={{ width: 220, height: 220, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(212,175,55,0.7)', fontSize: '0.8rem', textAlign: 'center', padding: '1rem', border: '1px dashed rgba(212,175,55,0.3)', borderRadius: 8 }}>
                                                     🔐 No dispatch key.<br />First accept custody of this batch via the Receive tab.
@@ -1030,18 +1062,17 @@ const ManageCustody = () => {
                                             <div className="digital-waybill">
                                                 <div className="qr-frame">
                                                     {nextKey ? (
+                                                        encryptedSingleQR ? (
                                                         <QRCodeSVG
                                                             id="waybill-qr"
-                                                            value={JSON.stringify({
-                                                                productId: productDetail.id,
-                                                                handoverKey: nextKey,
-                                                                senderAddress: account,
-                                                                timestamp: Date.now()
-                                                            })}
+                                                            value={encryptedSingleQR}
                                                             size={220}
                                                             level="H"
                                                             includeMargin={false}
                                                         />
+                                                        ) : (
+                                                            <div style={{ width: 220, height: 220, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#D4AF37', fontSize: '0.85rem', textAlign: 'center', border: '1px dashed rgba(212,175,55,0.3)', borderRadius: 8 }}>Encrypting…</div>
+                                                        )
                                                     ) : (
                                                         <div style={{ width: 220, height: 220, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#D4AF37', fontSize: '0.85rem', textAlign: 'center', border: '1px dashed rgba(212,175,55,0.3)', borderRadius: 8 }}>
                                                             Generating key...

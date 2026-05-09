@@ -8,6 +8,7 @@ import { generateShortSecretCode, hashSecretCode } from "../utils/secretCodeGene
 import { QRCodeSVG } from "qrcode.react";
 import { saveAs } from "file-saver";
 import { toast } from "react-toastify";
+import { encryptQR } from "../utils/qrEncryption";
 import {
     Package, ShieldCheck, Key, Download, ChevronDown, ChevronUp,
     Eye, EyeOff, RefreshCw, Mail, ArrowLeft, CheckCircle, Layers,
@@ -75,6 +76,10 @@ export default function BulkRegister() {
     const [roleOk,      setRoleOk]     = useState(null);
     const [formattedIds, setFormattedIds] = useState({});    // Store formatted IDs
 
+    // Encrypted QR values for waybill and consumer labels
+    const [encryptedWaybillQR, setEncryptedWaybillQR] = useState('');
+    const [encryptedConsumerQRs, setEncryptedConsumerQRs] = useState({}); // productId → encrypted string
+
     const fileRef = useRef();
     const log = (msg, type = "info") =>
         setStatusLog(prev => [...prev, { msg, type, t: new Date().toLocaleTimeString() }]);
@@ -88,6 +93,30 @@ export default function BulkRegister() {
         if (!account) { setRoleOk(null); return; }
         hasRole("MANUFACTURER", account).then(setRoleOk);
     }, [account, hasRole]);
+
+    // Encrypt waybill QR whenever registration results change
+    useEffect(() => {
+        if (!registered) { setEncryptedWaybillQR(''); return; }
+        const payload = buildWaybillPayload(
+            registered.batchId, registered.waybillKey,
+            account, batchName, registered.products.length
+        );
+        encryptQR(payload).then(setEncryptedWaybillQR);
+    }, [registered, account, batchName]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    // Encrypt per-product consumer QRs when results change
+    useEffect(() => {
+        if (!registered?.products?.length) { setEncryptedConsumerQRs({}); return; }
+        const formattedBatchId = registered.formatted?.batchId || registered.batchId;
+        const promises = registered.products.map(async (p) => {
+            const url = buildConsumerPayload(p.productId, formattedBatchId);
+            const enc = await encryptQR(url);
+            return [p.productId, enc];
+        });
+        Promise.all(promises).then(pairs => {
+            setEncryptedConsumerQRs(Object.fromEntries(pairs));
+        });
+    }, [registered]); // eslint-disable-line react-hooks/exhaustive-deps
 
     // ─────────────────────────────────────────────────────────────
     // ID FORMATTING
@@ -292,9 +321,11 @@ export default function BulkRegister() {
             const zip      = new JSZip();
             const qrFolder = zip.folder("consumer_qrcodes");
 
-            // Batch waybill QR
+            // Batch waybill QR (encrypted)
+            const waybillRaw = buildWaybillPayload(registered.batchId, registered.waybillKey, account, batchName, registered.products.length);
+            const waybillEncrypted = await encryptQR(waybillRaw);
             const waybillPng = await QRCode.toDataURL(
-                buildWaybillPayload(registered.batchId, registered.waybillKey, account, batchName, registered.products.length),
+                waybillEncrypted,
                 { width: 400, errorCorrectionLevel: "H" }
             );
             zip.file("batch_waybill_qr.png", waybillPng.replace(/^data:image\/png;base64,/, ""), { base64: true });
@@ -302,8 +333,10 @@ export default function BulkRegister() {
                 // Individual consumer QR per saree
             const formattedBatchId = registered.formatted?.batchId || registered.batchId;
             for (const p of registered.products) {
+                const consumerRaw = buildConsumerPayload(p.productId, formattedBatchId);
+                const consumerEncrypted = await encryptQR(consumerRaw);
                 const png = await QRCode.toDataURL(
-                    buildConsumerPayload(p.productId, formattedBatchId),
+                    consumerEncrypted,
                     { width: 300, errorCorrectionLevel: "H" }
                 );
                 qrFolder.file(`product_${p.productId}_qr.png`, png.replace(/^data:image\/png;base64,/, ""), { base64: true });
@@ -393,14 +426,11 @@ export default function BulkRegister() {
                 const { default: QRCode } = await import("qrcode");
 
                 const waybillData = buildWaybillPayload(
-                    registered.batchId,
-                    registered.waybillKey,
-                    account,
-                    batchName,
-                    registered.products.length
+                    registered.batchId, registered.waybillKey, account,
+                    batchName, registered.products.length
                 );
-
-                const waybillPng = await QRCode.toDataURL(waybillData, {
+                const waybillEncrypted = await encryptQR(waybillData);
+                const waybillPng = await QRCode.toDataURL(waybillEncrypted, {
                     width: 400,
                     errorCorrectionLevel: "H"
                 });
@@ -650,10 +680,7 @@ export default function BulkRegister() {
                             <div className="br-waybill-body">
                                 <div className="br-waybill-qr">
                                     <QRCodeSVG
-                                        value={buildWaybillPayload(
-                                            registered.batchId, registered.waybillKey,
-                                            account, batchName, registered.products.length
-                                        )}
+                                        value={encryptedWaybillQR || 'pending'}
                                         size={200} level="H" includeMargin
                                     />
                                     <div className="br-waybill-label">BATCH {registered.formatted?.batchId || `#${registered.batchId}`}</div>
@@ -723,7 +750,7 @@ export default function BulkRegister() {
                                                             <div className="br-product-name">{p.name}</div>
                                                         </div>
                                                         <QRCodeSVG
-                                                            value={buildConsumerPayload(p.productId, registered.formatted?.batchId || registered.batchId)}
+                                                            value={encryptedConsumerQRs[p.productId] || 'pending'}
                                                             size={60} level="H" includeMargin
                                                         />
                                                     </div>

@@ -2,6 +2,7 @@
 // Specialized endpoints for enhanced batch management
 import express from 'express';
 import QRCode from 'qrcode';
+import { encryptForQR } from '../utils/qrEncryption.js';
 
 const router = express.Router();
 
@@ -110,8 +111,9 @@ router.get('/:batchId/waybill', async (req, res) => {
         await batch.save();
 
         if (format === 'qr') {
-            // Return QR code as PNG image
-            const qrCodeDataURL = await QRCode.toDataURL(waybillPayload, {
+            // Return QR code as PNG image (encrypted payload)
+            const encryptedPayload = encryptForQR(waybillPayload);
+            const qrCodeDataURL = await QRCode.toDataURL(encryptedPayload, {
                 width: 300,
                 margin: 2,
                 color: {

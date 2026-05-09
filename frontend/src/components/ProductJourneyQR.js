@@ -1,11 +1,13 @@
 // src/components/ProductJourneyQR.js
-import React, { useRef } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { toast } from 'react-toastify';
+import { encryptQR } from '../utils/qrEncryption';
 import './ProductJourneyQR.css';
 
 const ProductJourneyQR = ({ productId, productName, journey }) => {
     const qrRef = useRef();
+    const [qrValue, setQrValue] = useState('');
 
     // Create journey data for QR code
     const journeyData = {
@@ -20,6 +22,12 @@ const ProductJourneyQR = ({ productId, productName, journey }) => {
             handler: step.handler
         })) || []
     };
+
+    // Encrypt journey JSON before embedding in QR
+    useEffect(() => {
+        encryptQR(JSON.stringify(journeyData)).then(setQrValue);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [productId, productName, JSON.stringify(journey)]);
 
     const downloadQR = () => {
         const svg = qrRef.current.querySelector('svg');
@@ -69,18 +77,24 @@ const ProductJourneyQR = ({ productId, productName, journey }) => {
             </div>
 
             <div className="qr-code-wrapper" ref={qrRef}>
-                <QRCodeSVG
-                    value={JSON.stringify(journeyData)}
-                    size={200}
-                    level="H"
-                    includeMargin={true}
-                    bgColor="#ffffff"
-                    fgColor="#000000"
-                />
+                {qrValue ? (
+                    <QRCodeSVG
+                        value={qrValue}
+                        size={200}
+                        level="H"
+                        includeMargin={true}
+                        bgColor="#ffffff"
+                        fgColor="#000000"
+                    />
+                ) : (
+                    <div style={{ width: 200, height: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', color: '#999' }}>
+                        Encrypting…
+                    </div>
+                )}
             </div>
 
             <div className="qr-actions">
-                <button className="btn btn-download" onClick={downloadQR}>
+                <button className="btn btn-download" onClick={downloadQR} disabled={!qrValue}>
                     📥 Download Journey QR
                 </button>
                 <button className="btn btn-copy" onClick={copyJourneyData}>
@@ -89,7 +103,7 @@ const ProductJourneyQR = ({ productId, productName, journey }) => {
             </div>
 
             <p className="qr-info">
-                Scan this code to view the complete product journey
+                🔒 Encrypted · Scan with our system to view the complete product journey
             </p>
         </div>
     );

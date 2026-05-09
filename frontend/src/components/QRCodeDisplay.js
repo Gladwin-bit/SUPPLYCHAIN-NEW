@@ -1,17 +1,23 @@
 // src/components/QRCodeDisplay.js
-// QR encodes a URL only — the secretCode is NEVER embedded in the QR.
+// QR encodes an ENCRYPTED URL — the secretCode is NEVER embedded in the QR.
 // It is printed separately under a scratch-off panel on the physical label.
-import React, { useRef } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { toast } from 'react-toastify';
+import { encryptQR } from '../utils/qrEncryption';
 import './QRCodeDisplay.css';
 
 const APP_ORIGIN = process.env.REACT_APP_PUBLIC_URL?.replace(/\/$/, "") || window.location.origin;
 
 const QRCodeDisplay = ({ productId, secretCode }) => {
     const qrRef = useRef();
-    // QR points to the product page — journey is fetched live from blockchain on scan
-    const qrUrl = `${APP_ORIGIN}/product/${productId}`;
+    const rawUrl = `${APP_ORIGIN}/product/${productId}`;
+    const [qrValue, setQrValue] = useState('');
+
+    // Encrypt the URL before putting it into the QR
+    useEffect(() => {
+        encryptQR(rawUrl).then(setQrValue);
+    }, [rawUrl]);
 
     const downloadQR = () => {
         const svg = qrRef.current.querySelector('svg');
@@ -38,7 +44,7 @@ const QRCodeDisplay = ({ productId, secretCode }) => {
     };
 
     const copyToClipboard = () => {
-        navigator.clipboard.writeText(qrUrl);
+        navigator.clipboard.writeText(rawUrl);
         toast.info('Product URL copied to clipboard!');
     };
 
@@ -62,17 +68,23 @@ const QRCodeDisplay = ({ productId, secretCode }) => {
             </div>
 
             <div className="qr-code-wrapper" ref={qrRef}>
-                <QRCodeSVG
-                    value={qrUrl}
-                    size={150}
-                    level="H"
-                    includeMargin={true}
-                    bgColor="#ffffff"
-                    fgColor="#000000"
-                />
+                {qrValue ? (
+                    <QRCodeSVG
+                        value={qrValue}
+                        size={150}
+                        level="H"
+                        includeMargin={true}
+                        bgColor="#ffffff"
+                        fgColor="#000000"
+                    />
+                ) : (
+                    <div style={{ width: 150, height: 150, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', color: '#999' }}>
+                        Encrypting…
+                    </div>
+                )}
             </div>
             <div className="qr-actions">
-                <button className="btn btn-download" onClick={downloadQR}>
+                <button className="btn btn-download" onClick={downloadQR} disabled={!qrValue}>
                     📥 Download QR
                 </button>
                 <button className="btn btn-copy" onClick={copyToClipboard}>
@@ -80,7 +92,7 @@ const QRCodeDisplay = ({ productId, secretCode }) => {
                 </button>
             </div>
             <p className="qr-info">
-                Scan to view supply chain journey · Enter scratch code to verify authenticity
+                🔒 Encrypted QR · Scan to view supply chain journey · Enter scratch code to verify authenticity
             </p>
         </div>
     );

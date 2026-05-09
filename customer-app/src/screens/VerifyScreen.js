@@ -13,6 +13,7 @@ import { verifyProduct } from '../utils/blockchain';
 import { verifyAPI, reportsAPI, certificateAPI } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import { getCurrentLocationLabel } from '../utils/location';
+import { decryptQR } from '../utils/qrEncryption';
 import {
   connectMetaMask,
   sendClaimTransaction,
@@ -257,13 +258,16 @@ export default function VerifyScreen() {
     if (loading) return;
     setScanning(false);
 
+    // Decrypt the QR payload (handles both encrypted and legacy plain-text QRs)
+    const decryptedData = decryptQR(data);
+
     let scannedId = null;
     try {
-      const parsed = JSON.parse(data);
+      const parsed = JSON.parse(decryptedData);
       scannedId = parsed.productId || parsed.id;
     } catch {
       try {
-        const url = new URL(data);
+        const url = new URL(decryptedData);
         if (url.pathname.includes('/product/')) {
           const parts = url.pathname.split('/');
           scannedId = parts[parts.length - 1];

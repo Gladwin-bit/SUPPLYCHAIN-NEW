@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { getLocationString, isGeolocationAvailable } from "../utils/geolocation";
 import CertificateViewer from "../components/CertificateViewer";
+import { decryptQR } from "../utils/qrEncryption";
 import "./VerifyProduct.css";
 
 const VerifyProduct = () => {
@@ -63,11 +64,13 @@ const VerifyProduct = () => {
             const qrCodeSuccessCallback = async (decodedText) => {
                 try {
                     console.log("Waybill QR Scanned:", decodedText);
+                    // Decrypt first (handles both encrypted and legacy plain-text QRs)
+                    const decryptedText = await decryptQR(decodedText);
                     let scannedId = null;
                     let isWaybill = false;
 
                     try {
-                        const waybillData = JSON.parse(decodedText);
+                        const waybillData = JSON.parse(decryptedText);
 
                         // ── BATCH_WAYBILL: B2B batch handover document ──────────────
                         if (waybillData.type === "BATCH_WAYBILL") {
@@ -122,7 +125,7 @@ const VerifyProduct = () => {
                         isWaybill = true;
                     } catch (e) {
                         try {
-                            const url = new URL(decodedText);
+                            const url = new URL(decryptedText);
                             if (url.pathname.includes('/product/')) {
                                 const parts = url.pathname.split('/');
                                 scannedId = parts[parts.length - 1];
@@ -292,6 +295,8 @@ const VerifyProduct = () => {
                 const code = jsQR(imageData.data, imageData.width, imageData.height);
 
                 if (code) {
+                    // Decrypt before trying to parse the QR content
+                    const rawData = await decryptQR(code.data);
                     try {
                         let scannedId = null;
                         let scannedSecret = null;
@@ -299,13 +304,13 @@ const VerifyProduct = () => {
 
                         try {
                             // Try JSON format first (old way)
-                            const qrData = JSON.parse(code.data);
+                            const qrData = JSON.parse(rawData);
                             scannedId = qrData.productId || qrData.id;
                             scannedSecret = qrData.secretCode || qrData.secret;
                         } catch (e) {
                             // Try parsing as URL (new way from BulkRegister)
                             try {
-                                const url = new URL(code.data);
+                                const url = new URL(rawData);
                                 if (url.pathname.includes('/product/')) {
                                     const parts = url.pathname.split('/');
                                     scannedId = parts[parts.length - 1]; // get ID from path
