@@ -1,12 +1,12 @@
 // src/App.js
-import React, { lazy, Suspense, useState, useRef } from 'react';
+import React, { lazy, Suspense, useState, useRef, Component } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation, NavLink, Navigate } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import ThemeToggle from './components/ThemeToggle';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { SupplyChainProvider, useSupplyChainContext } from './context/SupplyChainContext';
 import { ConnectButton } from './components/ConnectButton';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -170,6 +170,37 @@ function Navbar() {
     );
 }
 
+class RouteErrorBoundary extends Component {
+    constructor(props) {
+        super(props);
+        this.state = { hasError: false, error: null };
+    }
+
+    static getDerivedStateFromError(error) {
+        return { hasError: true, error };
+    }
+
+    render() {
+        if (this.state.hasError) {
+            const msg = this.state.error?.message || 'Unknown error';
+            return (
+                <div className="route-error-boundary content-container">
+                    <h2 className="route-error-boundary__title">This page could not be displayed</h2>
+                    <p className="route-error-boundary__msg">{msg}</p>
+                    <button
+                        type="button"
+                        className="route-error-boundary__reload"
+                        onClick={() => window.location.reload()}
+                    >
+                        Reload page
+                    </button>
+                </div>
+            );
+        }
+        return this.props.children;
+    }
+}
+
 function AnimatedRoutes() {
     const location = useLocation();
     const { isAuthenticated } = useAuth();
@@ -186,7 +217,7 @@ function AnimatedRoutes() {
     );
 
     return (
-        <AnimatePresence mode="wait">
+        <RouteErrorBoundary>
             <Routes location={location} key={location.pathname}>
                 {/* Public routes */}
                 <Route path="/welcome" element={<Suspense fallback={Fallback}><PageWrapper><Welcome /></PageWrapper></Suspense>} />
@@ -261,17 +292,16 @@ function AnimatedRoutes() {
                 {/* Redirect root based on auth status */}
                 <Route path="*" element={<Navigate to={isAuthenticated ? "/" : "/welcome"} replace />} />
             </Routes>
-        </AnimatePresence>
+        </RouteErrorBoundary>
     );
 }
 
 function PageWrapper({ children }) {
     return (
         <motion.div
-            initial={{ opacity: 0, y: 15 }}
+            initial={false}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -15 }}
-            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
             className="page-wrapper"
         >
             {children}

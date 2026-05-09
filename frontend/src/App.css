@@ -26,6 +26,53 @@ body {
   z-index: 1;
 }
 
+.access-denied {
+  max-width: 520px;
+  margin: 3rem auto;
+  padding: 2rem;
+  text-align: center;
+  color: var(--text-primary, #e8eaed);
+  background: var(--glass-bg, rgba(255, 255, 255, 0.04));
+  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.08));
+  border-radius: 16px;
+}
+.access-denied h2 {
+  margin: 0 0 0.75rem;
+  font-size: 1.35rem;
+}
+.access-denied p {
+  margin: 0.5rem 0;
+  color: var(--text-secondary, #9ca3af);
+  line-height: 1.5;
+}
+
+.route-error-boundary {
+  margin-top: 1rem;
+}
+.route-error-boundary__title {
+  color: var(--text-primary, #e8eaed);
+  margin: 0 0 0.75rem;
+}
+.route-error-boundary__msg {
+  color: var(--text-secondary, #9ca3af);
+  font-family: ui-monospace, monospace;
+  font-size: 0.85rem;
+  word-break: break-word;
+  margin: 0 0 1.25rem;
+}
+.route-error-boundary__reload {
+  padding: 0.6rem 1.25rem;
+  border-radius: 10px;
+  border: 1px solid var(--purple-glow, rgba(168, 85, 247, 0.4));
+  background: var(--purple-dim, rgba(168, 85, 247, 0.15));
+  color: var(--text-primary, #e8eaed);
+  font-weight: 600;
+  cursor: pointer;
+}
+.route-error-boundary__reload:hover {
+  background: rgba(168, 85, 247, 0.25);
+}
+
 @media (max-width: 768px) {
   .content-container { padding: 1.5rem 1rem; }
 }

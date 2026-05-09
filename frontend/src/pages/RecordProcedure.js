@@ -522,13 +522,13 @@ const RecordProcedure = () => {
                         </div>
 
                         {/* ── Tab Content ──────────────────────── */}
-                        <AnimatePresence mode="wait">
+                        <AnimatePresence mode="sync">
                             <motion.div
                                 key={activeTab}
-                                initial={{ opacity: 0, y: 10 }}
+                                initial={false}
                                 animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -10 }}
-                                transition={{ duration: 0.2, ease: "easeOut" }}
+                                exit={{ opacity: 0, y: -8 }}
+                                transition={{ duration: 0.18, ease: "easeOut" }}
                                 className="rp-content"
                             >
                                 {tabContent[activeTab]}
