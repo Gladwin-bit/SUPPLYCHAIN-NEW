@@ -14,6 +14,7 @@ import "./ManageCustody.css";
 import { encryptQR, decryptQR } from "../utils/qrEncryption";
 
 import { ConnectButton } from "../components/ConnectButton";
+import { getLocationString, isGeolocationAvailable } from "../utils/geolocation";
 
 const ManageCustody = () => {
     const { account, connectWallet, transferCustody, transferBatchCustody, getProductData, getBatchData, hasRole, getFormattedProductId, getFormattedBatchId, getProductDataSmart, getBatchDataSmart } = useSupplyChain();
@@ -348,14 +349,41 @@ const ManageCustody = () => {
         }
     };
 
+    /**
+     * If the user typed a location, use it.
+     * If left blank, auto-fetch GPS / IP-assisted location (same pipeline as customer claim).
+     */
+    const resolveHandoverLocation = async (manual, setLocState) => {
+        const trimmed = String(manual || "").trim();
+        if (trimmed) return trimmed;
+        if (!isGeolocationAvailable()) {
+            throw new Error("Enter a Dispatch / Target Location manually — this browser cannot access geolocation.");
+        }
+        toast.info("📍 Fetching your location for this custody transfer… allow location if prompted.");
+        const geo = await getLocationString();
+        setLocState(geo);
+        return geo;
+    };
+
     // TRANSFER CUSTODY (B2B Handover)
     const handleTransferCustody = async () => {
-        if (!incomingKey || !location) {
-            setStatus("⚠️ Enter the Handover Key and Location");
+        if (!incomingKey) {
+            setStatus("⚠️ Enter the Handover Key");
             return;
         }
         setLoading(true);
-        setStatus("Verifying key & transferring custody...");
+        setStatus(location.trim() ? "Verifying key & transferring custody..." : "Fetching your location…");
+
+        let locResolved;
+        try {
+            locResolved = await resolveHandoverLocation(location, setLocation);
+        } catch (locErr) {
+            setLoading(false);
+            const msg = locErr?.message || "Could not determine location";
+            setStatus(`⚠️ ${msg}`);
+            toast.warning(msg);
+            return;
+        }
 
         try {
             // Re-verify if not already verified via QR
@@ -374,8 +402,9 @@ const ManageCustody = () => {
                 }
             }
 
-            console.log("About to transfer custody:", { productId, incomingKey, nextKey, location });
-            await transferCustody(productId, incomingKey, nextKey, location);
+            setStatus("Verifying key & transferring custody...");
+            console.log("About to transfer custody:", { productId, incomingKey, nextKey, location: locResolved });
+            await transferCustody(productId, incomingKey, nextKey, locResolved);
 
             // Save the new handover key to backend for next transfer
             try {
@@ -413,11 +442,24 @@ const ManageCustody = () => {
 
     // BULK TRANSFER CUSTODY
     const handleBulkTransfer = async () => {
-        if (!bulkHandoverKey || !bulkLocation) {
-            setBulkStatus("⚠️ Enter the Handover Key and Location");
+        if (!bulkHandoverKey) {
+            setBulkStatus("⚠️ Enter the Handover Key");
             return;
         }
         setBulkLoading(true);
+        setBulkStatus("Preparing custody transfer…");
+
+        let locResolved;
+        try {
+            locResolved = await resolveHandoverLocation(bulkLocation, setBulkLocation);
+        } catch (locErr) {
+            setBulkLoading(false);
+            const msg = locErr?.message || "Could not determine location";
+            setBulkStatus(`⚠️ ${msg}`);
+            toast.warning(msg);
+            return;
+        }
+
         setBulkStatus("⛓️ Submitting N-1 verification to blockchain...");
         setBulkResult(null);
         setBulkTransferSuccess(false);
@@ -429,7 +471,7 @@ const ManageCustody = () => {
         try {
             const numericId = bulkBatchNumericId || bulkBatchId;
             // transferBatchCustody verifies hash(bulkHandoverKey) == storedHash on-chain (N-1 check)
-            await transferBatchCustody(numericId, bulkHandoverKey, newDispatchKey, bulkLocation);
+            await transferBatchCustody(numericId, bulkHandoverKey, newDispatchKey, locResolved);
 
             // ✅ Blockchain N-1 check passed — now persist the new dispatch key for the next transfer
             try {
@@ -870,11 +912,13 @@ const ManageCustody = () => {
                                                     />
                                                 </div>
                                                 <div>
-                                                    <label style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)', display: 'block', marginBottom: '0.3rem' }}>Target Location / Facility</label>
+                                                    <label style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)', display: 'block', marginBottom: '0.3rem' }}>
+                                                        Target location / facility — optional auto geo-tag on Accept
+                                                    </label>
                                                     <input
                                                         type="text"
                                                         className="input-modern"
-                                                        placeholder="e.g. Distribution Center Alpha"
+                                                        placeholder="e.g. Distribution Center Alpha (leave blank → device location when you accept)"
                                                         value={bulkLocation}
                                                         onChange={(e) => setBulkLocation(e.target.value)}
                                                         disabled={bulkLoading}
@@ -887,7 +931,7 @@ const ManageCustody = () => {
                                                     className="btn btn-primary btn-accept"
                                                     style={{ flex: 1, padding: '1rem' }}
                                                     onClick={handleBulkTransfer}
-                                                    disabled={bulkLoading || !bulkWaybillValid || !bulkLocation || !bulkHandoverKey}
+                                                    disabled={bulkLoading || !bulkWaybillValid || !bulkHandoverKey}
                                                 >
                                                     {bulkLoading ? "⛓️ Processing..." : `🔄 Accept Batch #${bulkBatchId}`}
                                                 </button>
@@ -1157,20 +1201,25 @@ const ManageCustody = () => {
                                                             value={incomingKey}
                                                             onChange={(e) => setIncomingKey(e.target.value)}
                                                         />
-                                                        <input
-                                                            type="text"
-                                                            className="input-modern"
-                                                            placeholder="Dispatch / Target Location"
-                                                            value={location}
-                                                            onChange={(e) => setLocation(e.target.value)}
-                                                        />
+                                                        <div>
+                                                            <label style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)', display: 'block', marginBottom: '0.35rem' }}>
+                                                                Dispatch / target location — optional auto geo-tag on Accept
+                                                            </label>
+                                                            <input
+                                                                type="text"
+                                                                className="input-modern"
+                                                                placeholder="e.g. Hub name, city (leave blank → device location captured when you accept)"
+                                                                value={location}
+                                                                onChange={(e) => setLocation(e.target.value)}
+                                                            />
+                                                        </div>
                                                     </div>
 
                                                     <div className="btn-stack" style={{ display: 'flex', gap: '1rem' }}>
                                                         <button
                                                             className="btn btn-primary btn-accept"
                                                             onClick={handleTransferCustody}
-                                                            disabled={loading || !waybillValid || !location || !incomingKey}
+                                                            disabled={loading || !waybillValid || !incomingKey}
                                                         >
                                                             {loading ? "Authorizing..." : "Accept Custody"}
                                                         </button>
