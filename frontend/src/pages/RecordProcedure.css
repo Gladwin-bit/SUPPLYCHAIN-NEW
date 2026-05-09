@@ -629,7 +629,7 @@
 .rps-qr-frame .qr-actions { 
     margin-top: 0.75rem !important;
     gap: 0.5rem !important;
-    flex-direction: column;
+    flex-direction: column !important;
     width: 100%;
 }
 .rps-qr-frame .btn-download,
