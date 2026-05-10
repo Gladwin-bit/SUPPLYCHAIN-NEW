@@ -244,7 +244,7 @@ export const login = async (req, res) => {
                     name: 'System Admin',
                     role: 'admin',
                     isVerified: true,
-                    walletAddress: 'admin_wallet'
+                    walletAddress: null
                 });
             }
             const token = generateToken(adminUser._id);
