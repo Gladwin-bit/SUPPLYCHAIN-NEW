@@ -119,10 +119,9 @@ function Navbar() {
                     )}
                     <NavLink to="/trace" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Trace</NavLink>
                     <NavLink to="/batch-showcase" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Batches</NavLink>
+                    <NavLink to="/admin" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Admin</NavLink>
                     <ChainDropdown />
                     <NavLink to="/profile" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Profile</NavLink>
-
-
 
                     <div className="nav-user-section">
                         {user && (
@@ -275,6 +274,11 @@ function AnimatedRoutes() {
                 <Route path="/profile" element={
                     <ProtectedRoute>
                         <Suspense fallback={Fallback}><PageWrapper><Profile /></PageWrapper></Suspense>
+                    </ProtectedRoute>
+                } />
+                <Route path="/admin" element={
+                    <ProtectedRoute>
+                        <Suspense fallback={Fallback}><PageWrapper><AdminPanel /></PageWrapper></Suspense>
                     </ProtectedRoute>
                 } />
 
