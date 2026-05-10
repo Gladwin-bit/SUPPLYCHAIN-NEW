@@ -119,7 +119,9 @@ function Navbar() {
                     )}
                     <NavLink to="/trace" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Trace</NavLink>
                     <NavLink to="/batch-showcase" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Batches</NavLink>
-                    <NavLink to="/admin" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Admin</NavLink>
+                    {role === 'admin' && (
+                        <NavLink to="/admin" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Admin</NavLink>
+                    )}
                     <ChainDropdown />
                     <NavLink to="/profile" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Profile</NavLink>
 
@@ -277,7 +279,7 @@ function AnimatedRoutes() {
                     </ProtectedRoute>
                 } />
                 <Route path="/admin" element={
-                    <ProtectedRoute>
+                    <ProtectedRoute roles={['admin']}>
                         <Suspense fallback={Fallback}><PageWrapper><AdminPanel /></PageWrapper></Suspense>
                     </ProtectedRoute>
                 } />
