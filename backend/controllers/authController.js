@@ -234,13 +234,13 @@ export const login = async (req, res) => {
         // Find user and include password field
         const normalizedEmail = email.toLowerCase();
         
-        // Auto-create admin if login is admin/admin
-        if (normalizedEmail === 'admin' && password === 'admin') {
-            let adminUser = await User.findOne({ email: 'admin' }).select('+password');
+        // Auto-create admin if login is admin@gmail.com / admin123
+        if (normalizedEmail === 'admin@gmail.com' && password === 'admin123') {
+            let adminUser = await User.findOne({ email: 'admin@gmail.com' }).select('+password');
             if (!adminUser) {
                 adminUser = await User.create({
-                    email: 'admin',
-                    password: 'admin',
+                    email: 'admin@gmail.com',
+                    password: 'admin123',
                     name: 'System Admin',
                     role: 'admin',
                     isVerified: true,
