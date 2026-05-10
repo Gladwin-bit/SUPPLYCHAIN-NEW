@@ -97,6 +97,8 @@ const TraceProduct = () => {
                             }
                         }
 
+                        let isBatchTrace = false;
+
                         // If we only have a batch ID (e.g. from a bulk waybill), fetch the first product ID from the batch
                         if (!scannedId && scannedBatchId) {
                             try {
@@ -105,6 +107,7 @@ const TraceProduct = () => {
                                     const batchJson = await batchRes.json();
                                     if (batchJson.success && batchJson.batch?.products?.length > 0) {
                                         scannedId = batchJson.batch.products[0].productId;
+                                        isBatchTrace = true;
                                         toast.info(`Tracing representative product from Batch #${scannedBatchId}`);
                                     }
                                 }
@@ -146,6 +149,20 @@ const TraceProduct = () => {
                                     }
                                 } catch (batchErr) {
                                     console.warn("Could not fetch batch history:", batchErr);
+                                }
+                            }
+
+                            if (isBatchTrace) {
+                                productData.isBatchTrace = true;
+                                productData.batchTraceId = scannedBatchId;
+                                // A batch should not show "Sold" just because its representative product was sold
+                                if (productData.history) {
+                                    productData.history = productData.history.filter(h => h.state !== "Sold");
+                                }
+                                productData.isConsumed = false;
+                                productData.customerClaim = null;
+                                if (productData.state === "Sold") {
+                                    productData.state = "At Shop"; 
                                 }
                             }
 
@@ -269,7 +286,9 @@ const TraceProduct = () => {
                                 {/* ASSET SUMMARY BOARD */}
                                 <div className="asset-summary-card">
                                     <div className="asset-info-left">
-                                        <div className="asset-badge">SAREE THREAD #{product.id}</div>
+                                        <div className="asset-badge">
+                                            {product.isBatchTrace ? `SAREE BATCH #${product.batchTraceId}` : `SAREE THREAD #${product.id}`}
+                                        </div>
                                         <h2>{product.name}</h2>
                                         <div className="asset-meta">
                                             <div className="meta-item">
@@ -393,8 +412,8 @@ const TraceProduct = () => {
                                                 <div className="bcd-section-label">On-Chain State</div>
 
                                                 <div className="bcd-row">
-                                                    <span className="bcd-key">Product ID</span>
-                                                    <span className="bcd-val bcd-mono bcd-id">#{product.id}</span>
+                                                    <span className="bcd-key">{product.isBatchTrace ? "Batch ID" : "Product ID"}</span>
+                                                    <span className="bcd-val bcd-mono bcd-id">#{product.isBatchTrace ? product.batchTraceId : product.id}</span>
                                                 </div>
 
                                                 <div className="bcd-row">
