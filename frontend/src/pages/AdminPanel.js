@@ -84,8 +84,9 @@ const AdminPanel = () => {
                             className="role-select"
                         >
                             <option value="MANUFACTURER">Manufacturer (Create Products)</option>
+                            <option value="COOPERATIVE">Cooperative (Verify Products)</option>
                             <option value="DISTRIBUTOR">Distributor (Transport)</option>
-                            <option value="RETAILER">Retailer (Sell)</option>
+                            <option value="SHOP">Shop / Retailer (Sell)</option>
                             <option value="ADMIN">Admin (Manage Roles)</option>
                         </select>
                     </div>
