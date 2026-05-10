@@ -1,6 +1,7 @@
 // src/pages/UploadQR.js
 import React, { useState } from "react";
 import { useSupplyChain } from "../hooks/useSupplyChain";
+import { decryptQR } from "../utils/qrEncryption";
 import { ProductTimeline } from "../components/ProductTimeline";
 import { LoadingSpinner } from "../components/LoadingSpinner";
 import { motion } from "framer-motion";
@@ -52,15 +53,23 @@ const UploadQR = () => {
                         if (code) {
                             let scannedId = null;
                             let scannedBatchId = null;
+                            let decryptedData = null;
+
+                            try {
+                                decryptedData = await decryptQR(code.data);
+                            } catch (err) {
+                                console.error("Decryption error:", err);
+                                decryptedData = code.data;
+                            }
 
                             try {
                                 // Parse old JSON format
-                                const qrData = JSON.parse(code.data);
+                                const qrData = JSON.parse(decryptedData);
                                 scannedId = qrData.productId || qrData.id;
                             } catch (e) {
                                 // Try parsing as URL (new way from BulkRegister)
                                 try {
-                                    const url = new URL(code.data);
+                                    const url = new URL(decryptedData);
                                     if (url.pathname.includes('/product/')) {
                                         const parts = url.pathname.split('/');
                                         scannedId = parts[parts.length - 1]; // get ID from path

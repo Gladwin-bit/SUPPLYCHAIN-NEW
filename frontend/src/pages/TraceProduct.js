@@ -1,6 +1,7 @@
 // src/pages/TraceProduct.js
 import React, { useState } from "react";
 import { useSupplyChain } from "../hooks/useSupplyChain";
+import { decryptQR } from "../utils/qrEncryption";
 import { ProductTimeline } from "../components/ProductTimeline";
 import { LoadingSpinner } from "../components/LoadingSpinner";
 import { motion, AnimatePresence } from "framer-motion";
@@ -67,16 +68,24 @@ const TraceProduct = () => {
 
                         let scannedId = null;
                         let scannedBatchId = null;
+                        let decryptedData = null;
+
+                        try {
+                            decryptedData = await decryptQR(code.data);
+                        } catch (err) {
+                            console.error("Decryption error:", err);
+                            decryptedData = code.data;
+                        }
 
                         try {
                             // Try waybill / legacy JSON format
-                            const qrData = JSON.parse(code.data);
+                            const qrData = JSON.parse(decryptedData);
                             scannedId = qrData.productId || qrData.id;
                             scannedBatchId = qrData.batchId || null;
                         } catch (e) {
                             // Try URL format (individual product QR from BulkRegister)
                             try {
-                                const url = new URL(code.data);
+                                const url = new URL(decryptedData);
                                 if (url.pathname.includes("/product/")) {
                                     const parts = url.pathname.split("/");
                                     scannedId = parts[parts.length - 1];
